@@ -1,78 +1,16 @@
-﻿; ----------------------------------------------------------
-; Сокращения
-::ltd::
-Send2("dev")
-return
-::дев::
-Send2("dev")
-return
-::инкуб::
-Send2("inqoob")
-return
-::crom::
-Send2("cron")
-return
-:o:GA::
-Send2("Google Analitics")
-return
-:o*:дднс::
-tt("Добрый день. Вы на связи?")
-return
-:o:дднс::
-Send2("Добрый день. Вы на связи?")
-return
-:o:ДДД::
-Send2("Добрый день")
-return
-:o:ДУ::
-Send2("Доброе утро")
-return
-:o:ДВ::
-Send2("Добрый вечер")
-return
-:o:пож::
-Send2("Пожалуйста")
-return
-:o:кол::
-Send2("количество")
-return
-:*:@@::
-Send2("vruzin@ya.ru")
-return
-#!u:: ; Для вставки UTM меток 
-Send2("?utm_source=yandex&utm_medium=cpc&utm_campaign={campaign_id}&utm_content={ad_id}&utm_term={keyword}")
-return
-:*:кон1::
-Send2("Мои контакты: Viber, WhatsApp, Телефон: +79046464626; Skype: vruzin; Telegram: @vruzin")
-return
-:*:кон2::
-Send2("Мои контакты: Viber, WhatsApp, Телефон - в профиле; Skype: vruzin; Telegram: @vruzin")
-return
-::ДДП::
-Send2("Добрый день. Это Рузин Василий по поводу проекта: ")
+﻿SetDefaultKeyboard(0x0409)
+SetNumLockState, Off
+SetCapsLockState, Off
+
+; Перезагрузка скрипта горячей клавишей
+#SingleInstance Force ;put this at the top of the script
+CapsLock & r::
+SetDefaultKeyboard(0x0409)
+SetNumLockState, Off
+SetCapsLockState, Off
+run, %A_ScriptFullPath% 
 return
 
-; ----------------------------------------------------------
-; В зависимости от времени суток пишет приветствие
-::ДД::
-Hello()
-return
-::LL::
-Hello()
-return
-
-Hello(){
-    if(A_Hour < 5)
-      state = Доброй ночи
-    else if(A_Hour < 10)
-      state = Доброе утро
-    else if(A_Hour < 17)
-      state = Добрый день
-    else
-      state = Добрый вечер
-    state=%state%.
-    Send2(state)
-}
 
 CapsLock & i::
 TmpFile=%A_ScriptDir%\-\ip
@@ -82,6 +20,8 @@ Send2(ExternalIP)
 ; FileReadLine,ExternalIP,%TmpFile%,1
 ToolTip, %ExternalIP% <- Внешний`n=====`n%A_IPAddress1%`n%A_IPAddress2%`n%A_IPAddress3%`n%A_IPAddress4%`n
 SetTimer, RemoveToolTip, -5000
+SetNumLockState, Off
+SetCapsLockState, Off
 return
 
 
@@ -121,12 +61,34 @@ return
 ; 2 нажатия - CapsLock
 ; 3 нажатия - CapsLock
 ; 4 нажатия - CapsLock
+; 1 нажатие и если текст выделен, тогда меняю РЕГИСТР букв
 #UseHook On
 CapsLock::
+; ClipSaved := ClipboardAll       ;- save clipboard
+; clipboard := ""                 ;- empty clipboard
+; Send, ^c                        ;- copy the selected file
+; ClipWait,5                      ;- wait for the clipboard to contain data
+; Sleep, 200
+; txt := ClipboardAll
+; MsgBox, >>>%txt%<<<
     KeyWait, %A_ThisHotkey%
     KeyWait, %A_ThisHotkey%, D T0.3
     If ErrorLevel
-        Send, {Ctrl Down}{Shift Down}{Shift Up}{Ctrl Up} ; 1 нажатие, сама клавиша.
+        ; if txt == "" 
+            Send, {Ctrl Down}{Shift Down}{RShift Down}{Shift Up}{Ctrl Up}{RShift Up} ; 1 нажатие, сама клавиша.
+        ; else
+        ; {
+        ;     ; txt := text_in_clipboard
+        ;     if txt is upper
+        ;         StringLower, txt, txt
+        ;     else
+        ;         StringUpper, txt, txt
+            
+        ;     clipboard := txt
+        ;     ClipWait
+        ;     Sleep, 200
+        ;     Send ^v
+        ; }
     Else
     {
         KeyWait, %A_ThisHotkey%
@@ -139,14 +101,25 @@ CapsLock::
             KeyWait, %A_ThisHotkey%
             KeyWait, %A_ThisHotkey%, D T0.3
             If ErrorLevel
+            {
                 ; 3 нажатия.
-                SetCapsLockState % !GetKeyState("CapsLock", "T") ; Toggle CapsLock
+                ; SetCapsLockState % !GetKeyState("CapsLock", "T") ; Toggle CapsLock
+                SetNumLockState, Off
+                SetCapsLockState, Off
+            }
             Else
+            {
                 ; 4 нажатия.
-                SetCapsLockState % !GetKeyState("CapsLock", "T") ; Toggle CapsLock
+                ; SetCapsLockState % !GetKeyState("CapsLock", "T") ; Toggle CapsLock
+                SetNumLockState, Off
+                SetCapsLockState, Off
+            }
         }
     }
-    Return
+; clipboard := ClipSaved        ;- restore original clipboard
+; ClipSaved := ""               ;- free the memory in case the clipboard was very large.
+
+Return
 #UseHook Off
 
 
@@ -213,21 +186,25 @@ else{
   SendRaw {| }
 }
 SetNumLockState, Off
+SetCapsLockState, Off
 return
 
 CapsLock & \::
 SendRaw |
 SetNumLockState, Off
+SetCapsLockState, Off
 return
 
 CapsLock & [::
 SendRaw {
 SetNumLockState, Off
+SetCapsLockState, Off
 return
 
 CapsLock & ]::
 SendRaw }
 SetNumLockState, Off
+SetCapsLockState, Off
 return
 
 
@@ -242,24 +219,28 @@ return
 CapsLock & 1::
 Run, M:\Sys\Vivaldi\Application\vivaldi.exe --profile-directory="Default"
 SetNumLockState, Off
+SetCapsLockState, Off
 return
 
 ; Maryadi Vivaldi.
 CapsLock & 2::
 Run, M:\Sys\Vivaldi\Application\vivaldi.exe --profile-directory="Profile 1"
 SetNumLockState, Off
+SetCapsLockState, Off
 return
 
 ; MVK Vivaldi.
 CapsLock & 3::
 Run, M:\Sys\Vivaldi\Application\vivaldi.exe --profile-directory="Profile 2"
 SetNumLockState, Off
+SetCapsLockState, Off
 return
 
 ; FL Vivaldi.
 CapsLock & 4::
 Run, M:\Sys\Vivaldi\Application\vivaldi.exe --profile-directory="Profile 5"
 SetNumLockState, Off
+SetCapsLockState, Off
 return
 
 
@@ -299,13 +280,13 @@ return
 ; ----------------------------------------------------------
 ; Приближение с мышкой. Shift+Alt+Insert
 ; У меня на клавиатуре это клавиша переключение приложений
-+!Insert::
+^+!ScrollLock::
 Process, Exist, ZoomIt.exe ;
 if %ErrorLevel% = 0
 {
   Run, "m:\Sys\ZoomIt\ZoomIt.exe"
 }
-Send +!{Insert}
+Send ^+!{ScrollLock}
 return
 
 ; ----------------------------------------------------------
@@ -488,89 +469,6 @@ Menu, MyMenu, add, Сменить тему Windows Светлая-Темная, 
 Menu, MyMenu, Show  ; Показывать меню по нажатию Win-Z. 
 return
 
-#Persistent  ; Выполнять скрипт, пока не закроет пользователь.
-
-
-
-
-; ----------------------------------------------------------
-
-CapsLock & h:: ; горячая клавиша Win+H
-; Получаем текущий выделенный текст. Вместо "ControlGet Selected" используется
-; буфер обмена, так как он есть в большинстве редакторов
-; (т.е. текстовых процессоров).  Сохраняем текущее содержимое буфера обмена,
-; чтобы восстановить его позднее. Хотя обрабатывается только простой текст,
-; это все же лучше, чем ничего:
-AutoTrim Off ; Сохраняет любой межстрочный интервал и пробел в конце текстовой строки в буфере обмена.
-ClipboardOld = %ClipboardAll%
-Clipboard = ; Чтобы обнаружение заработало, нужно начать с пустого значения.
-Send ^c
-ClipWait 1
-if ErrorLevel ; Время ожидания ClipWait вышло.
-  return
-; Заменяем CRLF и/или LF на `n, чтобы использовать в строке автозамены опцию "send-raw" (R):
-; Тоже самое делаем с любыми другими символами, иначе
-; могут возникнуть проблемы в "сыром" режиме:
-; Делаем эту замену вначале, чтобы избежать помех со стороны тех, которые идут далее.
-StringReplace, Hotstring, Clipboard, ``, ````, All
-StringReplace, Hotstring, Hotstring, `r`n, ``r, All ; В MS Word...`r работает лучше, чем `n.
-StringReplace, Hotstring, Hotstring, `n, ``r, All
-StringReplace, Hotstring, Hotstring, %A_Tab%, ``t, All
-StringReplace, Hotstring, Hotstring, `;, ```;, All
-Clipboard = %ClipboardOld% ; Восстанавливаем предыдущее содержимое буфера обмена.
-; Каретка поля ввода (InputBox) устанавливается в более удобную позицию:
-SetTimer, MoveCaret, 10
-; Показываем поле ввода (InputBox), обеспечивая строку автозамены по умолчанию:
-Text1 := "Напечатайте вашу аббревиатуру в указанном месте. "
-Text2 := "`n"
-Text3 =
-(
-  Пример: :R:btw`::by the way
-
-  ГДЕ:
-  R — опции,
-  btw — сокращение (аббревиатура);
-
-  ОПЦИИ:
-  * (звездочка): в конце (пробел, точка или перевод строки) не требуется.
-  ? (знак вопроса): строка автозамены запустится, даже если находится внутри другого слова.
-  B0 (за буквой B идет цифра 0): стирание (автоматический забой) напечатанной вами аббревиатуры не производится.
-  C: чувствительность к регистру. Регистр аббревиатуры должен точно совпадать с регистром
-  C1: не подчиняется регистру, используемому при наборе текста.
-  Kn: задержка нажатия клавиши. 0 рекомендуется; -1 нет задержки
-  o (буква): опускает конечный символ (нет пробела в конце)
-  R: сырой режим
-  Подробно: https://ahk-wiki.ru/hotstrings
-)
-InputBox, Hotstring, Новая автозамена, %Text1%%Text2%%Text3%,,757,413,,,,, :R:`::%Hotstring%
-if ErrorLevel <> 0 ; Пользователь нажал Cancel.
-  return
-IfInString, Hotstring, :R`:::
-{
-  MsgBox Вы не напечатали аббревиатуру. Строка автозамены не добавлена.
-  return
-}
-; Иначе, добавляем строку автозамены и перезагружаем скрипт.
-; Помещаем `n в начало, в случае, если в конце файла нет пустой строки.
-FileAppend, `n%Hotstring%, %A_ScriptFullPath%
-Reload
-; В случае успешного завершения перезагрузка закроет этот экземпляр скрипта в режиме ожидания,
-; поэтому строка ниже никогда не будет исполнена.
-Sleep 200
-Text1 := "Только что добавленная строка неверно отформатирована. "
-Text2 := "Открыть файл для форматирования? "
-Text3 := "Обратите внимание, что неисправные строки автозамены находятся внизу скрипта."
-MsgBox, 4,, %Text1%%Text2%%Text3%
-IfMsgBox, Yes, Edit
-return
-
-MoveCaret:
-IfWinNotActive, Новая автозамена
-  return
-; Иначе, передвигаем курсор в поле ввода туда, где пользователь напечатает аббревиатуру.
-Send {Home}{Right 3}
-SetTimer, MoveCaret, Off
-return
 
 
 ; Возвращает выделенный текст
@@ -600,15 +498,14 @@ Send2(sText) {
     ClipBackup:= ClipboardAll
     Clipboard := sText
     ClipWait
+    Sleep, 200 ;
     Send ^v
     Clipboard := ClipBackup
     ClipWait
 } ; eofun
 
 
-; Перезагрузка скрипта горячей клавишей
-#SingleInstance Force ;put this at the top of the script
-CapsLock & r::run, %A_ScriptFullPath% 
+
 
 
 
@@ -635,16 +532,8 @@ Loop {
         break
 }
 Send2(password)
-return
-
-
-tt(text){
-    ToolTip, %text%
-    SetTimer, ttRemove, -2000
-    return
-}
-ttRemove:
-ToolTip
+SetNumLockState, Off
+SetCapsLockState, Off
 return
 
 
@@ -652,16 +541,15 @@ return
 
 
 
-#Include GoogleTranslate.ahk
-#Include kitty.ahk
-#Include main-menu.ahk
-#Include dop_menu.ahk
-#Include Eval.ahk
-#Include build.ahk
+
+
+
 
 
 
 CapsLock & =::
+SetNumLockState, Off
+SetCapsLockState, Off
 ClipBackup:= ClipboardAll
 Send ^c
 ClipWait
@@ -673,3 +561,61 @@ Send ^v
 Clipboard := ClipBackup
 ClipWait
 return
+
+
+
+
+
+; ;- keyboardx Capn Odin
+; ;https://autohotkey.com/boards/viewtopic.php?f=6&t=18519
+; ^0::SetDefaultKeyboard(0x0807) ; swiss-german
+; ^1::SetDefaultKeyboard(0x0406) ; Danish
+; ^2::SetDefaultKeyboard(0x0409) ; English (USA)
+; ^3::SetDefaultKeyboard(0x0411) ; Japanese
+; ^4::SetDefaultKeyboard(0x0408) ; Greek
+;SetDefaultKeyboard(0x0419) ; Russian
+; return
+SetDefaultKeyboard(LocaleID){
+    Global
+    SPI_SETDEFAULTINPUTLANG := 0x005A
+    SPIF_SENDWININICHANGE := 2
+    Lan := DllCall("LoadKeyboardLayout", "Str", Format("{:08x}", LocaleID), "Int", 0)
+    VarSetCapacity(Lan%LocaleID%, 4, 0)
+    NumPut(LocaleID, Lan%LocaleID%)
+    DllCall("SystemParametersInfo", "UInt", SPI_SETDEFAULTINPUTLANG, "UInt", 0, "UPtr", &Lan%LocaleID%, "UInt", SPIF_SENDWININICHANGE)
+    WinGet, windows, List
+    Loop %windows% {
+        PostMessage 0x50, 0, %Lan%, , % "ahk_id " windows%A_Index%
+    }
+}
+return
+
+
+
+OnClipboardChange:
+if(A_EventInfo=1)
+    {
+        text_selected := true
+        text_in_clipboard := ClipboardAll
+        ; ToolTip text is selected
+        ; Sleep 1000
+        ; ToolTip
+    }
+else {
+    text_selected := false
+    text_in_clipboard := ""
+}
+return
+
+
+#Include abbreviations.ahk
+#Include GoogleTranslate.ahk
+#Include kitty.ahk
+#Include main-menu.ahk
+#Include dop_menu.ahk
+#Include Eval.ahk
+#Include build.ahk
+#Include Direct.ahk
+#Include fl.ahk
+#Include Docker.ahk
+; #Include Punto.ahk

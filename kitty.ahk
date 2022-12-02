@@ -1,4 +1,4 @@
-
+; psql -U postgres -h 127.0.0.1 -a -f ./sftpgo_init_postgres.sql
 CapsLock & k::
 Run, m:\Sys\Kitty\kitty_portable.exe
 WinWait, KiTTY Configuration
@@ -63,17 +63,94 @@ Loop, parse, Systemctl_comands, `|
 systemctl_z := Func("Systemctl").Bind("-a | grep","inqoob")
 Menu, Systemctl_, Add, &systemctl -a | grep inqoob, % systemctl_z
 Menu, sshMenu, Add, &3. systemctl, :Systemctl_
+
+
+
+Menu, sshMenu_git, Add, &1. git submodule update --init --merge --remote --recursive `t(Подгрузить и обновить субмодули), mgit_1
+Menu, sshMenu, Add, &4. git, :sshMenu_git
+
+
+Menu, sshMenu_powershell, Add, &1. (dir */*.go | select-string "github.com" | Get-Unique)`t(Список всех подключаемых модулей Github), mpowershell_1
+Menu, sshMenu, Add, &5. PowerShell, :sshMenu_powershell
+
+Menu, sshMenu_mvk, Add, &1. rm -rf `t(Удалить весь кеш), mvk_1
+Menu, sshMenu, Add, &6. MVK, :sshMenu_mvk
+
+Menu, sshMenu_ssh, Add, &1. ssh user@ip `t(Подключение ssh),ssh_1
+Menu, sshMenu_ssh, Add, &2. ls -l `t(Список директории подробно),ssh_2
+Menu, sshMenu_ssh, Add, &3. ls -al `t(Список директории подробно),ssh_3
+Menu, sshMenu, Add, &7. ssh, :sshMenu_ssh
+
+; Cmds := [
+; 	["ssh user@ip","ssh user@ip",],
+; ]
+; Loop, parse, Systemctl_comands, `|
+; {
+; 	i1:=A_Index
+; 	e1:=A_LoopField
+; 	Loop, parse, Systemctl_services, `^
+; 	{
+; 		i2:=A_Index
+; 		e2:=A_LoopField
+; 		menu_name    := RegExReplace(e2, "^(.+):(.+)$", "$1")
+; 		submenu_name := RegExReplace(e2, "^(.+):(.+)$", "$2")
+
+; 		Loop, parse, submenu_name, `|
+; 		{
+; 			i3:=A_Index
+; 			e3:=A_LoopField
+; 			systemctl_%i1%_%i2%_%i3% := Func("Systemctl").Bind(e1,e3)
+; 			Menu, Systemctl_%i1%_%i2%, Add, &%i3%. %e3%, % systemctl_%i1%_%i2%_%i3%
+; 		}
+; 		Menu, Systemctl_%i1%, Add, &%i2%. %menu_name%, :Systemctl_%i1%_%i2%
+; 	}
+; 	Menu, Systemctl_, Add, &%i1%. %e1%, :Systemctl_%i1%
+; }
+
+
+
 Menu, sshMenu, Add ; Add a separator line.
 Menu, sshMenu, Add, &cd /var/www/www-root/data/, mp3
 Menu, sshMenu, Add, &df`t(Сколько места занято), mp4
 Menu, sshMenu, Add, c&at /proc/version`t(Версия системы), mp5
 Menu, sshMenu, Add, ca&t /etc/*-release`t(Всё о системе), mp6
 Menu, sshMenu, Add, n&ginx -T | grep "server_name " `t(Список всех доменов), mp7
+Menu, sshMenu, Add, n&etstat -ano | findstr :9303 `t(Открытые порты с фильтром по порту 9303), mp10
+
 Menu, sshMenu, Show
 Menu, sshMenu, DeleteAll
+SetNumLockState, Off
+SetCapsLockState, Off
+return
+
+ssh_1:
+SendRaw, ssh user@ip
+Send, {Enter}
+return
+
+ssh_2:
+SendRaw, ls -l
+Send, {Enter}
+return
+
+ssh_3:
+SendRaw, ls -al
+Send, {Enter}
 return
 
 
+mpowershell_1:
+Send, (dir */*.go | select-string "github.com" | Get-Unique){Enter}
+return
+mvk_1:
+Send, rm -rf /home/bitrix/ext_www/mvk-spb.ru/bitrix/managed_cache/MYSQL/* /home/bitrix/ext_www/mvk-spb.ru/bitrix/cache/*{Enter}
+return
+mgit_1:
+Send, git submodule update --init --merge --remote --recursive{Enter}
+return
+mp10:
+Send, netstat -ano | findstr :9303{Enter}
+return
 mp2_1:
 Send, nginx -t{Enter}
 return
@@ -105,7 +182,7 @@ return
 
 mp8:
 SendRaw, chown -R bitrix:bitrix /home/bitrix/ext_www/mvk-spb.ru/vruzin/
-Send, {Enter}
+; Send, {Enter}
 return
 
 mp9:
@@ -124,4 +201,10 @@ Systemctl(cmd,serv)
 		SendRaw, systemctl status %serv%
 		Send, {Enter}
 	}
+}
+
+DblSend(asRaw,asSend)
+{
+	SendRaw, %asRaw%
+	Send, asSend
 }
