@@ -1,19 +1,25 @@
 CapsLock & d::
 Menu, dockerMenu, Add, &0. Исходники`thttps://habr.com/ru/post/659813/, doc0
 Menu, dockerMenu_ps, Add, &1. docker ps`tСписок контейнеров, doc1
-Menu, dockerMenu_ps, Add, &2. docker ps | grep ...`tФильтр списка контейнеров ..., doc2
-Menu, dockerMenu_ps, Add, &3. docker ps | grep nginx`Фильтр списка контейнеров c nginx, doc3
-Menu, dockerMenu_ps, Add, &4. docker ps | grep sftpgo`Фильтр списка контейнеров c sftpgo, doc4
+Menu, dockerMenu_ps, Add, &2. docker ps | grep ... `tФильтр списка контейнеров ..., doc2
+Menu, dockerMenu_ps, Add, &3. docker ps | grep nginx `tФильтр списка контейнеров c nginx, doc3
+Menu, dockerMenu_ps, Add, &4. docker ps | grep sftpgo `tФильтр списка контейнеров c sftpgo, doc4
 Menu, dockerMenu_ps, Add
 Menu, dockerMenu, Add, &1. docker ps`tСписок контейнеров, :dockerMenu_ps
+
+Menu, dockerComposeMenu, Add, &1. docker-compose up -d --no-deps --build nginx `tПерезапустить сборку контейнера с образом, comp1
+Menu, dockerComposeMenu, Add, &2. docker-compose run --rm  certbot certonly --webroot --webroot-path /var/www/certbot/ -d subdomen.example.ru `tСоздать Let's Encrypt сертификат для домена, comp2
+Menu, dockerComposeMenu, Add, &3. docker-compose run --rm certbot renew `tОбновить все сертификаты Let's Encrypt, comp3
+Menu, dockerComposeMenu, Add
+Menu, dockerMenu, Add, &2. docker-compose ...`tКонсоль, :dockerComposeMenu
 
 Menu, dockerMenu_node, Add, &1. Шаг1: Открыть порты`tmanager node, docNode1
 Menu, dockerMenu_node, Add, &2. Шаг1: Открыть порты`tworker node, docNode2
 Menu, dockerMenu_node, Add, &3. Шаг2: На manager node: docker swarm init`tОтвет выполнить на всех worker node, docNode3
 Menu, dockerMenu_node, Add, &4. На manager node:docker node ls`tСписок кластеров, docNode4
 Menu, dockerMenu_node, Add
-Menu, dockerMenu_node, Add, &5. Убить кластер: docker swarm leave`tВыполнить на кластере, docNode5
-Menu, dockerMenu, Add, &2. Создание кластера`tdocker swarm, :dockerMenu_node
+Menu, dockerMenu_node, Add, &5. Убить кластер: docker swarm leave `tВыполнить на кластере, docNode5
+Menu, dockerMenu, Add, &3. Создание кластера `tdocker swarm, :dockerMenu_node
 
 
 ; Menu, dockerMenu_stack, Add, &1. Шаг1: Открыть порты`tmanager node, docStack1
@@ -83,6 +89,21 @@ return
 
 
 
+comp1:
+SendRaw, docker-compose up -d --no-deps --build 
+ToolTip, docker-compose up -d --no-deps --build <nginx>`n=====`n<nginx> - Название сервиса в docker-compose
+SetTimer, RemoveToolTipDocker, -3000
+return
+
+comp2:
+SendRaw, docker-compose run --rm  certbot certonly --webroot --webroot-path /var/www/certbot/ -d subdomen.example.ru
+return
+comp3:
+SendRaw, docker-compose run --rm certbot renew
+return
+
+
+
 
 
 
@@ -110,3 +131,9 @@ SendRaw, docker ps | grep sftpgo
 Send, {Enter}
 return
 
+
+
+
+RemoveToolTipDocker:
+ToolTip
+return

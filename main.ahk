@@ -1,4 +1,4 @@
-﻿SetDefaultKeyboard(0x0409)
+SetDefaultKeyboard(0x0409)
 SetNumLockState, Off
 SetCapsLockState, Off
 
@@ -12,6 +12,54 @@ run, %A_ScriptFullPath%
 return
 
 
+; NumpadEnd::Send {Left}
+; NumpadPgDn::Send {Right}
+; NumpadClear::Send {Up}
+
+; NumpadLeft::Send {Home}
+; NumpadRight::Send {End}
+; +NumpadLeft::Send +{Home}
+; +NumpadRight::Send +{End}
+
+; NumpadAdd::
+; if (GetKeyState("NumLock", "T"))
+; {
+;     Send {PgUp}
+; }
+; Else
+; {
+;     SendRaw +
+; }
+; return
+
+; NumpadEnter::
+; if (GetKeyState("NumLock", "T"))
+; {
+;     Send {PgDn}
+; }
+; Else
+; {
+;     Send {NumpadEnter}
+; }
+; return
+
+; RAlt::Send {Break}
+; return
+; RAlt & Shift::Send +{Break}
+; return
+; RAlt & LAlt::Send !{Break}
+; return
+; RAlt & Ctrl::Send ^{Break}
+; ; RAlt & Win::Send {Win Down}{Break}{Win Up}
+; return
+
+
+
+
+
+
+
+
 CapsLock & i::
 TmpFile=%A_ScriptDir%\-\ip
 ExternalIP :=GetUrl("http://7fw.de/ipraw.php")
@@ -23,6 +71,8 @@ SetTimer, RemoveToolTip, -5000
 SetNumLockState, Off
 SetCapsLockState, Off
 return
+
+
 
 
 GetUrl(url)
@@ -42,6 +92,7 @@ Send2("= Фраза !~ Купить & Фраза !~ недорого & Фраз�
 return
 #IfWinActive
 
+
 ; ----------------------------------------------------------
 ;  Автоисправление в GraphCalc запятой на точку
 #IfWinActive ahk_exe GrphCalc.exe
@@ -52,8 +103,8 @@ return
 
 
 ; ----------------------------------------------------------
-; Поверх всех окон. Win+Ctrl+alt+t
-;#^!t::  Winset, Alwaysontop, , A 
+; Поверх всех окон. Win+Ctrl+Shift+t
+#^+t::  Winset, Alwaysontop, , A 
 
 
 ; Переключение языка кнопкой CapsLock
@@ -127,52 +178,52 @@ Return
 CapsLock & x::^+x
 #IfWinActive
 
-; ----------------------------------------------------------
-; MVK Workspace. Win+Ctrl+Numpad7
-#^Numpad7::
-SetTitleMatchMode 2
-; SublimeText
-IfWinNotExist, (MVK) - Sublime Text
-{
-  Run, M:\Sys\SublimeText3\sublime_text.exe "m:\prg\MVK\MVK.sublime-project"
-  WinWait, (MVK) - Sublime Text
-}
-WinMove, (MVK) - Sublime Text, , -1089, 700, 1101, 1373
-; IDEA
-if WinExist("mvk-spb.ru ahk_exe idea64.exe")
-{
-  WinActivate, mvk-spb.ru ahk_exe idea64.exe
-  Winset, Top
-}
-else{
-  Run, M:\Sys\IDEA\bin\idea64.exe "m:\prg\MVK\mvk-spb.ru"
-  WinWait, "mvk-spb.ru ahk_exe idea64.exe"
-}
-return
+; ; ----------------------------------------------------------
+; ; MVK Workspace. Win+Ctrl+Numpad7
+; #^Numpad7::
+; SetTitleMatchMode 2
+; ; SublimeText
+; IfWinNotExist, (MVK) - Sublime Text
+; {
+;   Run, M:\Sys\SublimeText3\sublime_text.exe "m:\prg\MVK\MVK.sublime-project"
+;   WinWait, (MVK) - Sublime Text
+; }
+; WinMove, (MVK) - Sublime Text, , -1089, 700, 1101, 1373
+; ; IDEA
+; if WinExist("mvk-spb.ru ahk_exe idea64.exe")
+; {
+;   WinActivate, mvk-spb.ru ahk_exe idea64.exe
+;   Winset, Top
+; }
+; else{
+;   Run, M:\Sys\IDEA\bin\idea64.exe "m:\prg\MVK\mvk-spb.ru"
+;   WinWait, "mvk-spb.ru ahk_exe idea64.exe"
+; }
+; return
 
 
-; ----------------------------------------------------------
-; MVK Workspace. Win+Ctrl+Numpad8
-#^Numpad8::
-SetTitleMatchMode 2
-; SublimeText
-IfWinNotExist, (Maryadi) - Sublime Text
-{
-  Run, M:\Sys\SublimeText3\sublime_text.exe "m:\prg\Maryadi\Maryadi.sublime-project"
-  WinWait, (Maryadi) - Sublime Text
-}
-WinMove, (Maryadi) - Sublime Text, , -1089, 700, 1101, 1373
-; IDEA
-if WinExist("igo2london.com ahk_exe idea64.exe")
-{
-  WinActivate, igo2london.com ahk_exe idea64.exe
-  Winset, Top
-}
-else{
-  Run, M:\Sys\IDEA\bin\idea64.exe "m:\prg\Maryadi\igo2london.com\"
-  WinWait, "igo2london.com ahk_exe idea64.exe"
-}
-return
+; ; ----------------------------------------------------------
+; ; MVK Workspace. Win+Ctrl+Numpad8
+; #^Numpad8::
+; SetTitleMatchMode 2
+; ; SublimeText
+; IfWinNotExist, (Maryadi) - Sublime Text
+; {
+;   Run, M:\Sys\SublimeText3\sublime_text.exe "m:\prg\Maryadi\Maryadi.sublime-project"
+;   WinWait, (Maryadi) - Sublime Text
+; }
+; WinMove, (Maryadi) - Sublime Text, , -1089, 700, 1101, 1373
+; ; IDEA
+; if WinExist("igo2london.com ahk_exe idea64.exe")
+; {
+;   WinActivate, igo2london.com ahk_exe idea64.exe
+;   Winset, Top
+; }
+; else{
+;   Run, M:\Sys\IDEA\bin\idea64.exe "m:\prg\Maryadi\igo2london.com\"
+;   WinWait, "igo2london.com ahk_exe idea64.exe"
+; }
+; return
 
 ; CapsLock + скобки и разделитель, в любой раскладке правильные
 CapsLock & Space:: 
@@ -272,7 +323,7 @@ return
 ; ; ----------------------------------------------------------
 ; ; Распознавание области экрана. Shift+PrintScreen
 +PrintScreen::
-Run, "c:\ProgramData\Microsoft\Windows\Start Menu\Programs\ABBYY FineReader 15\ABBYY Screenshot Reader.lnk"
+Run, "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\ABBYY FineReader PDF 15\ABBYY Screenshot Reader.lnk"
 Sleep, 500 ;
 Send !{Enter}
 return
@@ -307,56 +358,56 @@ return
 
 
 
-; ----------------------------------------------------------
-; Выравнивание чатов в правом мониторе. Win+Ctrl+Numpad0
-#^Numpad0::
-IfWinExist, Viber
-{
-    WinActivate ; Использует окно, найденное выше.
-    Winset, Top
-}
-else {
-  Run, "%userprofile%\AppData\Local\Viber\Viber.exe"
-}
-IfWinExist, WhatsApp
-{
-  WinActivate ; Использует окно, найденное выше.
-  Winset, Top
-}
-else {
-	Run, "%userprofile%\AppData\Local\WhatsApp\WhatsApp.exe"
-}
-IfWinExist, Telegram
-{
-	WinActivate ; Использует окно, найденное выше.
-  Winset, Top
-}
-else {
-	Run, "M:\Sys\Telegram\Telegram.exe"
-}
-IfWinExist, Skype
-{
-  WinActivate ; Использует окно, найденное выше.
-  Winset, Top
-}
-else {
-	Run, "C:\Program Files (x86)\Microsoft\Skype for Desktop\Skype.exe"
-}
-WinMove, Telegram, , 3840, 314, 799, 1080
-WinMove, Viber, , 4632, 776, 914, 625
-WinMove, WhatsApp, , 4639, 314, 900, 648
-Winset, Top
-WinMove, Skype, , 5532, 314, 875, 1088
-return
+; ; ----------------------------------------------------------
+; ; Выравнивание чатов в правом мониторе. Win+Ctrl+Numpad0
+; #^Numpad0::
+; IfWinExist, Viber
+; {
+;     WinActivate ; Использует окно, найденное выше.
+;     Winset, Top
+; }
+; else {
+;   Run, "%userprofile%\AppData\Local\Viber\Viber.exe"
+; }
+; IfWinExist, WhatsApp
+; {
+;   WinActivate ; Использует окно, найденное выше.
+;   Winset, Top
+; }
+; else {
+; 	Run, "%userprofile%\AppData\Local\WhatsApp\WhatsApp.exe"
+; }
+; IfWinExist, Telegram
+; {
+; 	WinActivate ; Использует окно, найденное выше.
+;   Winset, Top
+; }
+; else {
+; 	Run, "M:\Sys\Telegram\Telegram.exe"
+; }
+; IfWinExist, Skype
+; {
+;   WinActivate ; Использует окно, найденное выше.
+;   Winset, Top
+; }
+; else {
+; 	Run, "C:\Program Files (x86)\Microsoft\Skype for Desktop\Skype.exe"
+; }
+; WinMove, Telegram, , 3840, 314, 799, 1080
+; WinMove, Viber, , 4632, 776, 914, 625
+; WinMove, WhatsApp, , 4639, 314, 900, 648
+; Winset, Top
+; WinMove, Skype, , 5532, 314, 875, 1088
+; return
 
-; ----------------------------------------------------------
-; Все чаты на фон. Win+Ctrl+Numpad0
-#^NumpadDot::  
-Winset, Bottom, , WhatsApp
-Winset, Bottom, , Telegram
-Winset, Bottom, , Viber
-Winset, Bottom, , Skype
-return
+; ; ----------------------------------------------------------
+; ; Все чаты на фон. Win+Ctrl+Numpad0
+; #^NumpadDot::  
+; Winset, Bottom, , WhatsApp
+; Winset, Bottom, , Telegram
+; Winset, Bottom, , Viber
+; Winset, Bottom, , Skype
+; return
 
 
 

@@ -67,6 +67,9 @@ Menu, sshMenu, Add, &3. systemctl, :Systemctl_
 
 
 Menu, sshMenu_git, Add, &1. git submodule update --init --merge --remote --recursive `t(Подгрузить и обновить субмодули), mgit_1
+Menu, sshMenu_git, Add, &2. git config --global user.name `t(Git Авторизация), mgit_2
+Menu, sshMenu_git, Add, &3. git config --list --show-origin `t(Git настройки и где заданы. Q - выход), mgit_3
+Menu, sshMenu_git, Add, &4. git branch --sort=-committerdate `t(Сортировка веток по дате), mgit_4
 Menu, sshMenu, Add, &4. git, :sshMenu_git
 
 
@@ -80,6 +83,16 @@ Menu, sshMenu_ssh, Add, &1. ssh user@ip `t(Подключение ssh),ssh_1
 Menu, sshMenu_ssh, Add, &2. ls -l `t(Список директории подробно),ssh_2
 Menu, sshMenu_ssh, Add, &3. ls -al `t(Список директории подробно),ssh_3
 Menu, sshMenu, Add, &7. ssh, :sshMenu_ssh
+
+Menu, sshMenu_curl, Add, &1. curl --resolve 'domain.ru:80:127.0.0.1' http://domain.ru/link `t(Запрос по сайту на сервере по IP),curl_1
+Menu, sshMenu, Add, &8. curl, :sshMenu_curl
+
+Menu, sshMenu_backup, Add, &1. mysqldump -u root -p dbname > db-2023-01-18.sql `t(Бекап базы MySQL. Ввести пароль),backup_1
+Menu, sshMenu_backup, Add, &2. tar -cvf public_2023-01-18.tar.gz /var/www/vruzin/domen.ru `t(Архивация папки),backup_2
+Menu, sshMenu, Add, &9. Бекап, :sshMenu_backup
+
+Menu, sshMenu_isp, Add, &1. /usr/local/mgr5/sbin/mgrctl -m ispmgr exit `t(Перегрузить ISP. Помогает в сбоях CRON),isp_1
+Menu, sshMenu, Add, &a. ISPmanager 6, :sshMenu_isp
 
 ; Cmds := [
 ; 	["ssh user@ip","ssh user@ip",],
@@ -148,6 +161,16 @@ return
 mgit_1:
 Send, git submodule update --init --merge --remote --recursive{Enter}
 return
+mgit_2:
+Send, git config --global user.name "vruzin"{Enter}
+Send, git config --global user.email "vruzin@ya.ru"{Enter}
+return
+mgit_3:
+Send, git config --list --show-origin{Enter}
+return
+mgit_4:
+Send, git branch --sort=-committerdate{Enter}
+return
 mp10:
 Send, netstat -ano | findstr :9303{Enter}
 return
@@ -188,6 +211,28 @@ return
 mp9:
 SendRaw, chmod -R 755 .
 Send, {Enter}
+return
+
+curl_1:
+SendRaw, curl --resolve 'domain.ru:80:127.0.0.1' http://domain.ru/link
+return
+
+isp_1:
+SendRaw, /usr/local/mgr5/sbin/mgrctl -m ispmgr exit
+return
+
+backup_1:
+FormatTime, TimeString,, yyyy-MM-dd
+SendRaw, mysqldump -u root -p dbname > db-
+Send, %TimeString%
+SendRaw, .sql
+return
+
+backup_2:
+FormatTime, TimeString,, yyyy-MM-dd
+SendRaw, tar -cvf public_
+Send, %TimeString%
+SendRaw, .tar.gz /var/www/vruzin/domen.ru
 return
 
 
