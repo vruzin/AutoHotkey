@@ -1,4 +1,4 @@
-CapsLock & b::
+﻿CapsLock & b::
 Menu, buildMenu, Add, npm run dev, npm1
 Menu, buildMenu, Show
 Menu, buildMenu, DeleteAll

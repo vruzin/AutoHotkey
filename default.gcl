@@ -22,7 +22,7 @@ number_seperator_amount=3
 number_space_seperator=,
 decimal_seperator=0
 decimal_seperator_amount=3
-decimal_space_seperator=                            
+decimal_space_seperator=                              
 history_count=20
 [GraphTabs]
 on0=0

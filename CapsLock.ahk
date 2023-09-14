@@ -1,4 +1,4 @@
-CaplsLock::
+﻿CaplsLock::
   сBaseKey              := "CapseLock"
   cAloneKey             := "1"  ;одиночное нежатие клавиши
   cDoubleKey            := "2"  ;двойное нажатие клавиши

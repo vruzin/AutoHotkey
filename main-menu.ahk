@@ -1,4 +1,4 @@
-Menu, Tray, Tip, % "Light/Dark Mode Switch (AHK)"
+﻿Menu, Tray, Tip, % "Light/Dark Mode Switch (AHK)"
 Menu, Tray, Icon, % "shell32.dll", 175
 
 

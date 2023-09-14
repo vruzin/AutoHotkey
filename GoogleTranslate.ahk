@@ -1,4 +1,4 @@
-;MsgBox, % GoogleTranslate("Hello, World!")
+﻿;MsgBox, % GoogleTranslate("Hello, World!")
 
 
 

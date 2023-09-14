@@ -1,4 +1,4 @@
-CapsLock & z::
+﻿CapsLock & z::
 Menu, dop_menu, Add, .prg / inqoob, iq1
 Menu, dop_menu, Add, &Git / global vruzin, iq2
 Menu, dop_menu, Add

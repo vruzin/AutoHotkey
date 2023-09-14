@@ -1,4 +1,4 @@
-CapsLock & d::
+﻿CapsLock & d::
 Menu, dockerMenu, Add, &0. Исходники`thttps://habr.com/ru/post/659813/, doc0
 Menu, dockerMenu_ps, Add, &1. docker ps`tСписок контейнеров, doc1
 Menu, dockerMenu_ps, Add, &2. docker ps | grep ... `tФильтр списка контейнеров ..., doc2

@@ -1,4 +1,4 @@
-; psql -U postgres -h 127.0.0.1 -a -f ./sftpgo_init_postgres.sql
+﻿; psql -U postgres -h 127.0.0.1 -a -f ./sftpgo_init_postgres.sql
 CapsLock & k::
 Run, m:\Sys\Kitty\kitty_portable.exe
 WinWait, KiTTY Configuration

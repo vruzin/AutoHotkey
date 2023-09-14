@@ -1,4 +1,4 @@
-SetDefaultKeyboard(0x0409)
+﻿SetDefaultKeyboard(0x0409)
 SetNumLockState, Off
 SetCapsLockState, Off
 
