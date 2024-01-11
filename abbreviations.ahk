@@ -16,9 +16,9 @@ return
 ::crom::
 Send2("cron")
 return
-:o:GA::
-Send2("Google Analitics")
-return
+;:o:GA::
+;Send2("Google Analitics")
+;return
 :o:дднс::
 Send2("Добрый день. Вы на связи?")
 return
