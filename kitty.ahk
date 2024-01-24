@@ -79,9 +79,11 @@ Menu, sshMenu, Add, &5. PowerShell, :sshMenu_powershell
 Menu, sshMenu_mvk, Add, &1. rm -rf `t(Удалить весь кеш), mvk_1
 Menu, sshMenu, Add, &6. MVK, :sshMenu_mvk
 
-Menu, sshMenu_ssh, Add, &1. ssh user@ip `t(Подключение ssh),ssh_1
-Menu, sshMenu_ssh, Add, &2. ls -l `t(Список директории подробно),ssh_2
-Menu, sshMenu_ssh, Add, &3. ls -al `t(Список директории подробно),ssh_3
+Menu, sshMenu_ssh, Add, &1. ssh => `t(копировать мой ключ на удаленный сервер),ssh_4
+Menu, sshMenu_ssh, Add, &2. ssh туннель => `t(Создать тунель через удаленный порт),ssh_5
+Menu, sshMenu_ssh, Add, &3. ls -l `t(Список директории подробно),ssh_2
+Menu, sshMenu_ssh, Add, &4. ls -al `t(Список директории подробно),ssh_3
+Menu, sshMenu_ssh, Add, &5. ssh user@ip `t(Подключение ssh),ssh_1
 Menu, sshMenu, Add, &7. ssh, :sshMenu_ssh
 
 Menu, sshMenu_curl, Add, &1. curl --resolve 'domain.ru:80:127.0.0.1' http://domain.ru/link `t(Запрос по сайту на сервере по IP),curl_1
@@ -150,6 +152,17 @@ ssh_3:
 SendRaw, ls -al
 Send, {Enter}
 return
+
+ssh_4:
+SendRaw, type $env:USERPROFILE\.ssh\id_rsa.pub | ssh root@ "cat >> .ssh/authorized_keys"
+Send, {Left 30}
+return
+
+ssh_5:
+SendRaw, ls -al
+Send, {Enter}
+return
+
 
 
 mpowershell_1:
