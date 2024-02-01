@@ -81,9 +81,10 @@ Menu, sshMenu, Add, &6. MVK, :sshMenu_mvk
 
 Menu, sshMenu_ssh, Add, &1. ssh => `t(копировать мой ключ на удаленный сервер),ssh_4
 Menu, sshMenu_ssh, Add, &2. ssh туннель => `t(Создать тунель через удаленный порт),ssh_5
-Menu, sshMenu_ssh, Add, &3. ls -l `t(Список директории подробно),ssh_2
-Menu, sshMenu_ssh, Add, &4. ls -al `t(Список директории подробно),ssh_3
-Menu, sshMenu_ssh, Add, &5. ssh user@ip `t(Подключение ssh),ssh_1
+Menu, sshMenu_ssh, Add, &3. ssh скрипт => `t(Запустить локальный скрипт на удаленном сервере),ssh_6
+Menu, sshMenu_ssh, Add, &4. ls -l `t(Список директории подробно),ssh_2
+Menu, sshMenu_ssh, Add, &5. ls -al `t(Список директории подробно),ssh_3
+Menu, sshMenu_ssh, Add, &6. ssh user@ip `t(Подключение ssh),ssh_1
 Menu, sshMenu, Add, &7. ssh, :sshMenu_ssh
 
 Menu, sshMenu_curl, Add, &1. curl --resolve 'domain.ru:80:127.0.0.1' http://domain.ru/link `t(Запрос по сайту на сервере по IP),curl_1
@@ -159,8 +160,13 @@ Send, {Left 30}
 return
 
 ssh_5:
-SendRaw, ls -al
-Send, {Enter}
+SendRaw, ssh -L 8080:remoteserver.org:80 ssh-server
+Send, {Left 14}
+return
+
+ssh_6:
+SendRaw, ssh root@IP 'bash -s' < local_script.sh
+Send, {Left 28}
 return
 
 
