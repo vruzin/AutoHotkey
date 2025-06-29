@@ -79,12 +79,14 @@ Menu, sshMenu, Add, &5. PowerShell, :sshMenu_powershell
 Menu, sshMenu_mvk, Add, &1. rm -rf `t(Удалить весь кеш), mvk_1
 Menu, sshMenu, Add, &6. MVK, :sshMenu_mvk
 
+Menu, sshMenu_ssh, Add, &T. ТУННЕЛЬ `t(запустить в powershell),ssh_0
 Menu, sshMenu_ssh, Add, &1. ssh => `t(копировать мой ключ на удаленный сервер),ssh_4
-Menu, sshMenu_ssh, Add, &2. ssh туннель => `t(Создать тунель через удаленный порт),ssh_5
-Menu, sshMenu_ssh, Add, &3. ssh скрипт => `t(Запустить локальный скрипт на удаленном сервере),ssh_6
-Menu, sshMenu_ssh, Add, &4. ls -l `t(Список директории подробно),ssh_2
-Menu, sshMenu_ssh, Add, &5. ls -al `t(Список директории подробно),ssh_3
-Menu, sshMenu_ssh, Add, &6. ssh user@ip `t(Подключение ssh),ssh_1
+Menu, sshMenu_ssh, Add, &2. ssh => `t(копировать мой ключ в .ssh/authorized_keys),ssh_7
+Menu, sshMenu_ssh, Add, &3. ssh туннель => `t(Создать тунель через удаленный порт),ssh_5
+Menu, sshMenu_ssh, Add, &4. ssh скрипт => `t(Запустить локальный скрипт на удаленном сервере),ssh_6
+Menu, sshMenu_ssh, Add, &5. ls -l `t(Список директории подробно),ssh_2
+Menu, sshMenu_ssh, Add, &6. ls -al `t(Список директории подробно),ssh_3
+Menu, sshMenu_ssh, Add, &7. ssh user@ip `t(Подключение ssh),ssh_1
 Menu, sshMenu, Add, &7. ssh, :sshMenu_ssh
 
 Menu, sshMenu_curl, Add, &1. curl --resolve 'domain.ru:80:127.0.0.1' http://domain.ru/link `t(Запрос по сайту на сервере по IP),curl_1
@@ -139,6 +141,11 @@ SetNumLockState, Off
 SetCapsLockState, Off
 return
 
+ssh_0:
+Send3("ssh -D 9999 root@206.189.105.106")
+Send, {Enter}
+return
+
 ssh_1:
 SendRaw, ssh user@ip
 Send, {Enter}
@@ -155,7 +162,7 @@ Send, {Enter}
 return
 
 ssh_4:
-SendRaw, type $env:USERPROFILE\.ssh\id_rsa.pub | ssh root@ "cat >> .ssh/authorized_keys"
+Send3("type $env:USERPROFILE\.ssh\id_rsa.pub | ssh root@ ""cat >> .ssh/authorized_keys""")
 Send, {Left 30}
 return
 
@@ -165,10 +172,13 @@ Send, {Left 14}
 return
 
 ssh_6:
-SendRaw, ssh root@IP 'bash -s' < local_script.sh
+Send3("ssh root@IP 'bash -s' < local_script.sh")
 Send, {Left 28}
 return
 
+ssh_7:
+Send3("echo ""ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC74zFURucisFnCko4zOR4mKWPB/Qf8sphp+xNJVN6mHU2PmvASFkj1CIvkWFWzfT0pN2HdG0fgDFHBCBzplJ3aKadceFOwULyoZ9wcCxB5+8X3CNc01EDeRNSOxGtJWiykFcvC7mkfwCufpFz9xgCeuSyh9FopBGgv6Ods9coMjxYDtllNVOzqP5/PPBFyaPh8NMJrhjkgp5OZPPYACoomkyqKEOZhw2RXGaZDHgbPIs6DrcBKQtmktZaZoYeO6nGr498A7QvU1eGSrhFKNW6tf9RXUcammTKz8IvAsfg/Vu3srAxnp7SRXUGwSQHzdRomDGfJTOzvdBNvUMaooN9/VD6fEBZ0lIvDM96LxBmP6fvd1L7CqDLQNbdYTG9jSpor9f24aDFGYgQ9NumfwA/Gu8e6ivxAmlszntrpE5sfPr8m8lsqas4OQA7IRSkel2Npy3yKvV/1I2nvX5Ot5uqoU8vYF6eHFTfqPCV/9MdlJ1nfn5rLOVofWHTJ9BEKH6s= user@vr"" >> ~/.ssh/authorized_keys")
+return
 
 
 mpowershell_1:
