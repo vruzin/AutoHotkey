@@ -257,7 +257,7 @@ return
 ; ; ----------------------------------------------------------
 ; ; Распознавание области экрана. Shift+PrintScreen
 +PrintScreen::
-Run, "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\ABBYY FineReader PDF 15\ABBYY Screenshot Reader.lnk"
+Run, "C:\Program Files\ABBYY FineReader 16\screenshotreader.exe"
 Sleep, 500 ;
 Send !{Enter}
 return
