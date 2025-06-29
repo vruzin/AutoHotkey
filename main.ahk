@@ -483,7 +483,7 @@ Send2(sText) {
     ClipBackup:= ClipboardAll
     Clipboard := sText
     ClipWait
-    Sleep, 200 ;
+    Sleep, 400 ;
     Send ^v
     Clipboard := ClipBackup
     ClipWait
