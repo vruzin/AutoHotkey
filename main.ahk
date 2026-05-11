@@ -14,6 +14,7 @@
 
 #Requires AutoHotkey v2.0
 #SingleInstance Force
+#Warn All, OutputDebug             ; предупреждения не блокируют выполнение, пишутся в OutputDebug
 
 ; Старт скрипта: английская раскладка + сброс залипшего CapsLock/NumLock
 SetDefaultKeyboard(0x0409)
@@ -36,11 +37,31 @@ CapsLock & i:: ShowIpAddresses()
 ShowIpAddresses() {
     extIP := GetUrl("http://7fw.de/ipraw.php")
     Send2(extIP)
-    ToolTip extIP " <- Внешний`n=====`n"
-        . A_IPAddress1 "`n" A_IPAddress2 "`n" A_IPAddress3 "`n" A_IPAddress4
+
+    text := extIP . " <- Внешний`n=====`n"
+    for ip in GetLocalIPv4()
+        text .= ip . "`n"
+    ToolTip text
+
     SetTimer () => ToolTip(), -5000
     SetNumLockState("Off")
     SetCapsLockState("Off")
+}
+
+; В AHK v2 нет A_IPAddress1..4 (v1-only). Получаем IPv4-адреса через WMI.
+GetLocalIPv4() {
+    ips := []
+    try {
+        for adapter in ComObjGet("winmgmts:").ExecQuery(
+                "Select * from Win32_NetworkAdapterConfiguration WHERE IPEnabled = TRUE") {
+            if !adapter.IPAddress
+                continue
+            for ip in adapter.IPAddress
+                if InStr(ip, ".")        ; IPv4
+                    ips.Push(ip)
+        }
+    }
+    return ips
 }
 
 GetUrl(url) {
@@ -301,6 +322,21 @@ SetDefaultKeyboard(localeId) {
 ; ============================================================
 ; ПОДКЛЮЧЕНИЕ МОДУЛЕЙ
 ; ============================================================
+
+; Внешние библиотеки
+#Include lib\JSON.ahk
+
+; Ядро Punto v2 (этап 2)
+#Include core\Layout.ahk
+#Include core\Dictionaries.ahk
+#Include core\AppContext.ahk
+#Include core\Learning.ahk
+#Include core\History.ahk
+#Include core\Input.ahk
+#Include core\Autoswitch.ahk
+#Include core\Punto.ahk
+
+; Legacy-модули (мигрированные хоткеи и сниппеты)
 #Include legacy\abbreviations.ahk
 #Include legacy\GoogleTranslate.ahk
 #Include legacy\kitty.ahk
@@ -311,3 +347,6 @@ SetDefaultKeyboard(localeId) {
 #Include legacy\fl.ahk
 #Include legacy\Docker.ahk
 #Include legacy\CapsLock_double.ahk
+
+; Запуск Punto v2 (после загрузки всех модулей)
+Punto.Init()
