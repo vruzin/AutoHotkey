@@ -1,1 +1,7 @@
 /.idea/
+
+# Логи и dev-артефакты
+tools/*.log
+tools/data/
+data/punto_events.log
+data/learned_words.json

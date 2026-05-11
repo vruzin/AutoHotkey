@@ -74,8 +74,9 @@ class PuntoInput {
             PuntoInput.Log("CHAR (suppressed): " . char)
             return
         }
-        if !PuntoInput.enabled
-            return
+        ; ВНИМАНИЕ: не делаем return при !enabled — буфер всё равно собираем,
+        ; чтобы ForceWords и Break-операции работали даже с выключенной
+        ; автозаменой. Реальная проверка enabled — внутри Autoswitch.OnWordEnd.
 
         if PuntoInput.IsWordChar(char) {
             PuntoInput.buffer .= char
@@ -101,8 +102,9 @@ class PuntoInput {
     static OnKeyDown(ih, vk, sc) {
         if PuntoInput.suppress
             return
-        if !PuntoInput.enabled
-            return
+        ; Тоже без проверки enabled — спецклавиши (Backspace/стрелки) должны
+        ; корректно управлять буфером всегда, иначе после выключения Punto
+        ; буфер начнёт устаревать.
 
         switch vk {
             case 0x08:                                   ; Backspace

@@ -49,6 +49,34 @@ class PuntoAutoswitch {
 
         PuntoInput.Log("OnWordEnd: word=[" . word . "] sep=[" . separator . "] type=" . cls["type"] . " inputLang=" . inputLang)
 
+        ; ForceWords проходят независимо от Punto.enabled/no_autoswitch.
+        ; Только при mode="off" не трогаем (игры, fullscreen).
+        forceMode := PuntoAppContext.ModeFor()
+        if (forceMode != "off") {
+            canonical := PuntoForceWords.Find(word)
+            if (canonical != "" && canonical != word
+                    && InStr(PuntoAutoswitch.TRIGGER_SEPS, separator, true)) {
+                PuntoInput.Log("  → FORCE: " . word . " → " . canonical)
+                PuntoAutoswitch.ApplyForceWord(word, canonical, separator)
+                return
+            }
+        }
+
+        ; Если Punto выключена (Alt+Pause) — дальше не идём (только историю
+        ; обновим, чтобы Break мог откатить ввод вручную).
+        if !PuntoInput.enabled {
+            PuntoHistory.Push(Map(
+                "type",       "userType",
+                "wordTyped",  word,
+                "wordFinal",  word,
+                "langBefore", inputLang,
+                "langAfter",  inputLang,
+                "switched",   false,
+                "separator",  separator
+            ))
+            return
+        }
+
         if (StrLen(word) < 2) {
             PuntoHistory.Push(Map(
                 "type",       "userType",
@@ -148,6 +176,25 @@ class PuntoAutoswitch {
             PuntoLayout.Toggle()
         Sleep(PuntoAutoswitch.TOGGLE_DELAY_MS)
         SendText(suggestion . separator)
+    }
+
+    ; ------------------------------------------------------------
+    ; ApplyForceWord — замена слова на его «канонический» вариант
+    ; из ForceWords. Раскладка после замены — EN (предполагаем, что
+    ; force-слова обычно технические и латинские).
+    static ApplyForceWord(wordTyped, canonical, separator) {
+        backspaces := StrLen(wordTyped) + StrLen(separator)
+        PuntoInput.SendSilently(
+            (*) => PuntoAutoswitch.DoReplacement(backspaces, separator, canonical, "en"))
+        PuntoHistory.Push(Map(
+            "type",       "forceword",
+            "wordTyped",  wordTyped,
+            "wordFinal",  canonical,
+            "langBefore", "",
+            "langAfter",  "en",
+            "switched",   true,
+            "separator",  separator
+        ))
     }
 
     ; ------------------------------------------------------------
