@@ -335,6 +335,10 @@ SetDefaultKeyboard(localeId) {
 
 ; Фичи поверх ядра (этап 3)
 #Include features\ForceWords.ahk
+#Include features\Case.ahk
+#Include features\Translit.ahk
+#Include features\Number2Text.ahk
+#Include features\PasteRaw.ahk
 
 #Include core\Input.ahk
 #Include core\Autoswitch.ahk

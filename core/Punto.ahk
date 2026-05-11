@@ -31,6 +31,18 @@ class Punto {
         Hotkey("^!d",     (*) => Punto.ShowDiagnostics())
         Hotkey("^!l",     (*) => Punto.ToggleDebug())
 
+        ; Этап 3 — текстовые операции (Ctrl+Shift+Alt+letter, чтобы не
+        ; конфликтовать с системными и приложениями).
+        Hotkey("^+!u",    (*) => PuntoCase.Upper())
+        Hotkey("^+!l",    (*) => PuntoCase.Lower())
+        Hotkey("^+!s",    (*) => PuntoCase.Sentence())
+        Hotkey("^+!t",    (*) => PuntoCase.Title())
+        Hotkey("^+!y",    (*) => PuntoCase.Toggle())
+        Hotkey("^+!j",    (*) => PuntoTranslit.TranslitSelected())
+        Hotkey("^+!n",    (*) => PuntoNumber.SelectionToText())
+        Hotkey("^+!v",    (*) => PuntoPasteRaw.Paste())
+        Hotkey("^+!r",    (*) => Punto.ResetLearning())
+
         Punto.UpdateTray()
         Punto.initialized := true
     }
@@ -138,6 +150,21 @@ class Punto {
     static Flash(text) {
         ToolTip(text)
         SetTimer(() => ToolTip(), -1200)
+    }
+
+    ; ------------------------------------------------------------
+    ; ResetLearning — Ctrl+Shift+Alt+R: сбросить самообучаемый словарь.
+    static ResetLearning() {
+        ans := MsgBox("Сбросить самообучаемый словарь?`n`nВсе слова,"
+            . " которые Punto запомнила после Pause-исправлений, будут забыты.",
+            "Punto", "YesNo Icon? Default2")
+        if (ans != "Yes")
+            return
+        try FileDelete(A_ScriptDir . "\data\learned_words.json")
+        PuntoLearning.words := Map()
+        PuntoLearning.words.CaseSense := false
+        PuntoLearning.dirty := false
+        Punto.Flash("Самообучение сброшено")
     }
 
     ; ------------------------------------------------------------
