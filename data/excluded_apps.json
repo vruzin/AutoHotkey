@@ -1,0 +1,47 @@
+﻿{
+  "no_autoswitch":[
+    "photoshop.exe",
+    "warp.exe",
+    "devenv.exe",
+    "winword.exe",
+    "excel.exe",
+    "outlook.exe",
+    "powerpnt.exe",
+    "communicator.exe",
+    "lync.exe",
+    "skype.exe",
+    "thunderbird.exe",
+    "premiere",
+    "after effects",
+    "aftereffects",
+    "panotour",
+    "phped.exe",
+    "jitsi",
+    "hipchat"
+  ],
+  "off":[
+    "gta_sa.exe",
+    "gtaiv.exe",
+    "gta-vc.exe",
+    "gta-sa.exe",
+    "gta5.exe",
+    "starcraft.exe",
+    "sc2.exe",
+    "hearthstone.exe",
+    "syberia3.exe",
+    "crysis3.exe",
+    "frozen throne.exe",
+    "war3.exe",
+    "wow.exe",
+    "wow-64.exe",
+    "sirus.exe",
+    "warcraft"
+  ],
+  "paste_mode":[
+    "icq.exe",
+    "lingvo",
+    "telegram",
+    "viber",
+    "whatsapp"
+  ]
+}

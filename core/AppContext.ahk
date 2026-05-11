@@ -95,7 +95,7 @@ class PuntoAppContext {
         obj := Map()
         for mode, list in PuntoAppContext.rules
             obj[mode] := list
-        json := JSON.stringify(obj, 2)
+        out := JSON.stringify(obj, 2)
         ; Гарантируем существование папки
         dir := A_ScriptDir . "\data"
         if !DirExist(dir)
@@ -103,7 +103,7 @@ class PuntoAppContext {
         f := FileOpen(PuntoAppContext.ConfigPath, "w", "UTF-8")
         if !f
             return false
-        f.Write(json)
+        f.Write(out)
         f.Close()
         return true
     }
