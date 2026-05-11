@@ -65,6 +65,7 @@ class Punto {
         direction   := (currentLang = "ru") ? "cyr2lat" : "lat2cyr"
         converted   := PuntoLayout.Convert(word, direction)
         backspaces  := StrLen(word)
+        newLang     := (currentLang = "ru") ? "en" : "ru"
 
         PuntoInput.SendSilently((*) => Punto.DoConvert(backspaces, converted))
 
@@ -72,8 +73,19 @@ class Punto {
         ; обработать комбинированный word + converted как новое слово.
         PuntoInput.ResetBuffer()
 
+        ; Записываем как autoswitch — повторный Pause сразу откатит замену
+        ; (через UndoLastAutoswitch), как ожидает пользователь.
+        PuntoHistory.Push(Map(
+            "type",       "autoswitch",
+            "wordTyped",  word,
+            "wordFinal",  converted,
+            "langBefore", currentLang,
+            "langAfter",  newLang,
+            "switched",   true,
+            "separator",  ""
+        ))
+
         ; Запоминаем как «правильное в новой раскладке» для self-learning.
-        newLang := (currentLang = "ru") ? "en" : "ru"
         PuntoLearning.Record(converted, newLang)
         Punto.Flash("⇋ " . converted)
     }
