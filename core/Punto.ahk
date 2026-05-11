@@ -22,6 +22,7 @@ class Punto {
         PuntoLearning.Init()
         PuntoAppContext.Init()
         PuntoForceWords.Init()
+        PuntoSettings.Apply()              ; перетирает дефолты пользовательскими
         PuntoInput.Start()
 
         ; Хоткеи. Стандартная клавиша PuntoSwitcher — Pause (она же Break без Ctrl).

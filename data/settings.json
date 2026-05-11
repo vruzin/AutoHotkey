@@ -1,0 +1,21 @@
+﻿{
+  "autoswitch":{
+    "toggle_delay_ms":60,
+    "triggers":" .,;:!?)]}>\"'"
+  },
+  "forcewords":{
+    "enabled":1
+  },
+  "input":{
+    "debug_on_start":0
+  },
+  "learning":{
+    "threshold":2
+  },
+  "palette":{
+    "hotkey":"^Pause"
+  },
+  "translit":{
+    "system":"gost"
+  }
+}

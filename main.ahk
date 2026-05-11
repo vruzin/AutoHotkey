@@ -332,6 +332,7 @@ SetDefaultKeyboard(localeId) {
 #Include core\AppContext.ahk
 #Include core\Learning.ahk
 #Include core\History.ahk
+#Include core\Settings.ahk
 
 ; Фичи поверх ядра (этап 3)
 #Include features\ForceWords.ahk
