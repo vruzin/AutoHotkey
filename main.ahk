@@ -342,6 +342,10 @@ SetDefaultKeyboard(localeId) {
 
 #Include core\Input.ahk
 #Include core\Autoswitch.ahk
+
+; UI палитра (этап 4 — пока простая Gui, потом WebView2+Vue)
+#Include ui\Palette.ahk
+
 #Include core\Punto.ahk
 
 ; Legacy-модули (мигрированные хоткеи и сниппеты)
