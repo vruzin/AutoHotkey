@@ -35,13 +35,27 @@ class PuntoAutoswitch {
     static OnWordEnd(word, separator) {
         if (word = "")
             return
+
+        ; Раскладку слова определяем ТОЛЬКО по его символам, не доверяя
+        ; PuntoLayout.GetActiveLang (она может отставать или ошибаться,
+        ; особенно в Sublime/Qt-приложениях).
+        cls := PuntoDict.ClassifyWord(word)
+        if (cls["type"] = "lat")
+            inputLang := "en"
+        else if (cls["type"] = "cyr")
+            inputLang := "ru"
+        else
+            inputLang := PuntoLayout.GetActiveLang()    ; fallback для пустых/смешанных
+
+        PuntoInput.Log("OnWordEnd: word=[" . word . "] sep=[" . separator . "] type=" . cls["type"] . " inputLang=" . inputLang)
+
         if (StrLen(word) < 2) {
             PuntoHistory.Push(Map(
                 "type",       "userType",
                 "wordTyped",  word,
                 "wordFinal",  word,
-                "langBefore", PuntoLayout.GetActiveLang(),
-                "langAfter",  PuntoLayout.GetActiveLang(),
+                "langBefore", inputLang,
+                "langAfter",  inputLang,
                 "switched",   false,
                 "separator",  separator
             ))
@@ -49,33 +63,36 @@ class PuntoAutoswitch {
         }
 
         mode := PuntoAppContext.ModeFor()
+        PuntoInput.Log("  mode=" . mode)
         if (mode = "off")
             return
 
-        currentLang := PuntoLayout.GetActiveLang()
-
         ; Слово известно пользователю — доверяем
-        if PuntoLearning.IsKnown(word, currentLang) {
+        if PuntoLearning.IsKnown(word, inputLang) {
+            PuntoInput.Log("  → known to user, skip")
             PuntoHistory.Push(Map(
                 "type",       "userType",
                 "wordTyped",  word,
                 "wordFinal",  word,
-                "langBefore", currentLang,
-                "langAfter",  currentLang,
+                "langBefore", inputLang,
+                "langAfter",  inputLang,
                 "switched",   false,
                 "separator",  separator
             ))
             return
         }
 
-        decision := PuntoDict.LooksLikeWrongLayout(word, currentLang)
+        decision := PuntoDict.LooksLikeWrongLayout(word)
+        PuntoInput.Log("  detector: wrong=" . (decision["wrong"] ? "Y" : "N")
+            . " suggestion=[" . (decision.Has("suggestion") ? decision["suggestion"] : "") . "]"
+            . " reason=" . decision["reason"])
         if !decision["wrong"] {
             PuntoHistory.Push(Map(
                 "type",       "userType",
                 "wordTyped",  word,
                 "wordFinal",  word,
-                "langBefore", currentLang,
-                "langAfter",  currentLang,
+                "langBefore", inputLang,
+                "langAfter",  inputLang,
                 "switched",   false,
                 "separator",  separator
             ))
@@ -88,8 +105,8 @@ class PuntoAutoswitch {
                 "type",       "userType",
                 "wordTyped",  word,
                 "wordFinal",  word,
-                "langBefore", currentLang,
-                "langAfter",  currentLang,
+                "langBefore", inputLang,
+                "langAfter",  inputLang,
                 "switched",   false,
                 "separator",  separator,
                 "suggestion",     decision["suggestion"],
@@ -99,8 +116,9 @@ class PuntoAutoswitch {
         }
 
         ; Делаем автозамену
+        PuntoInput.Log("  → APPLY: " . word . " → " . decision["suggestion"] . " (sep=" . separator . ")")
         PuntoAutoswitch.ApplyReplacement(word, decision["suggestion"], separator,
-                                          currentLang, decision["suggestionLang"])
+                                          inputLang, decision["suggestionLang"])
     }
 
     ; ------------------------------------------------------------
@@ -108,7 +126,8 @@ class PuntoAutoswitch {
     static ApplyReplacement(wordTyped, suggestion, separator, langBefore, langAfter) {
         backspaces := StrLen(wordTyped) + StrLen(separator)
 
-        PuntoInput.SendSilently(() => PuntoAutoswitch.DoReplacement(backspaces, separator, suggestion))
+        PuntoInput.SendSilently(
+            (*) => PuntoAutoswitch.DoReplacement(backspaces, separator, suggestion, langAfter))
 
         PuntoHistory.Push(Map(
             "type",       "autoswitch",
@@ -121,9 +140,12 @@ class PuntoAutoswitch {
         ))
     }
 
-    static DoReplacement(backspaces, separator, suggestion) {
+    static DoReplacement(backspaces, separator, suggestion, targetLang := "") {
         Send("{BS " . backspaces . "}")
-        PuntoLayout.Toggle()
+        if (targetLang != "")
+            PuntoLayout.SwitchToLang(targetLang)
+        else
+            PuntoLayout.Toggle()
         Sleep(PuntoAutoswitch.TOGGLE_DELAY_MS)
         SendText(suggestion . separator)
     }
@@ -138,8 +160,8 @@ class PuntoAutoswitch {
         last := PuntoHistory.Pop()
         backspaces := StrLen(last["wordFinal"]) + StrLen(last["separator"])
 
-        PuntoInput.SendSilently(() => PuntoAutoswitch.DoReplacement(
-            backspaces, last["separator"], last["wordTyped"]
+        PuntoInput.SendSilently((*) => PuntoAutoswitch.DoReplacement(
+            backspaces, last["separator"], last["wordTyped"], last["langBefore"]
         ))
 
         ; Запомнить, что пользователь не хочет автозамены этого слова
@@ -150,7 +172,6 @@ class PuntoAutoswitch {
     ; ------------------------------------------------------------
     ; ConvertLastWord — Break-режим «переключить последнее слово».
     ; Используется, когда автозамены не было (или она уже устарела).
-    ; Слово, его раскладка, итоговая раскладка после переключения.
     static ConvertLastWord() {
         last := PuntoHistory.Last()
         if (last.Count = 0)
@@ -160,23 +181,31 @@ class PuntoAutoswitch {
         if (word = "")
             return false
 
-        lang := last["langBefore"]
-        direction := (lang = "ru") ? "cyr2lat" : "lat2cyr"
+        ; Определяем направление по символам — не по сохранённому lang.
+        cls := PuntoDict.ClassifyWord(word)
+        if (cls["type"] = "lat") {
+            direction := "lat2cyr"
+            newLang   := "ru"
+        } else if (cls["type"] = "cyr") {
+            direction := "cyr2lat"
+            newLang   := "en"
+        } else {
+            return false
+        }
         converted := PuntoLayout.Convert(word, direction)
 
         backspaces := StrLen(word) + StrLen(sep)
-        PuntoInput.SendSilently(() => PuntoAutoswitch.DoReplacement(backspaces, sep, converted))
+        PuntoInput.SendSilently(
+            (*) => PuntoAutoswitch.DoReplacement(backspaces, sep, converted, newLang))
 
-        ; Слово теперь в правильной (для пользователя) раскладке — учим
-        newLang := (lang = "ru") ? "en" : "ru"
         PuntoLearning.Record(converted, newLang)
         ; Обновляем последнюю запись истории, чтобы повторный Break не циклил
-        last["wordTyped"] := converted
-        last["wordFinal"] := converted
+        last["wordTyped"]  := converted
+        last["wordFinal"]  := converted
         last["langBefore"] := newLang
-        last["langAfter"] := newLang
-        last["switched"] := true
-        last["timestamp"] := A_TickCount
+        last["langAfter"]  := newLang
+        last["switched"]   := true
+        last["timestamp"]  := A_TickCount
         return true
     }
 }

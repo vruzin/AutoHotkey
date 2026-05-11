@@ -47,11 +47,13 @@ class PuntoLayout {
 
     ; ------------------------------------------------------------
     ; GetActiveLang — короткий идентификатор раскладки: "ru" или "en"
-    ; (по нижним 14 битам HKL — language id).
+    ; (по нижним 14 битам HKL — language id Windows).
+    ; Russian primary language id = 0x019, sublang 0x01 → 0x0419.
+    ; English primary = 0x009 → 0x0409.
     static GetActiveLang() {
         hkl := PuntoLayout.GetActiveHKL()
-        langId := hkl & 0x3FFF
-        return (langId = 0x019) ? "ru" : "en"
+        primary := hkl & 0x3FF                ; primary language ID (10 bit)
+        return (primary = 0x019) ? "ru" : "en"
     }
 
     ; ------------------------------------------------------------
@@ -59,32 +61,40 @@ class PuntoLayout {
     static IsRussian() => PuntoLayout.GetActiveLang() = "ru"
 
     ; ------------------------------------------------------------
-    ; Toggle — переключить раскладку активного окна.
-    ; PostMessage 0x50 (WM_INPUTLANGCHANGEREQUEST) с wParam=2 (next),
-    ; lParam=0 — для совместимости с большинством приложений.
-    ; Окнам-владельцам (toplevel) сообщение отправляется напрямую,
-    ; чтобы корректно переключилась раскладка в дочерних окнах (диалоги IDE).
+    ; Toggle — переключить активную раскладку (ru ↔ en).
+    ; В отличие от PostMessage(0x50, 2, 0) — «next layout», тут мы
+    ; явно загружаем нужный HKL и шлём его. Так стабильнее в IDE,
+    ; Sublime, Chrome и других не-стандартных окнах.
     static Toggle() {
         hWnd := WinExist("A")
         if !hWnd
             return false
-        owner := DllCall("GetWindow", "Ptr", hWnd, "UInt", 4, "Ptr")   ; GW_OWNER
-        target := owner ? owner : hWnd
-        PostMessage(0x50, 2, 0, , "ahk_id " . target)
-        return true
+        current := PuntoLayout.GetActiveLang()
+        targetLangId := (current = "ru") ? PuntoLayout.LANG_EN : PuntoLayout.LANG_RU
+        return PuntoLayout.SwitchTo(targetLangId)
+    }
+
+    ; ------------------------------------------------------------
+    ; SwitchToLang — переключить на указанный язык-код ("ru"/"en").
+    static SwitchToLang(lang) {
+        targetLangId := (lang = "ru") ? PuntoLayout.LANG_RU : PuntoLayout.LANG_EN
+        return PuntoLayout.SwitchTo(targetLangId)
     }
 
     ; ------------------------------------------------------------
     ; SwitchTo — переключить на конкретную раскладку (по lang-id, напр. 0x0409).
-    ; Используется реже, чем Toggle — например, при принудительной установке
-    ; en-раскладки перед вводом ssh-команд.
+    ; Шлёт WM_INPUTLANGCHANGEREQUEST окну-владельцу (toplevel) —
+    ; так дочерние окна (диалоги IDE, всплывающие меню) подхватывают.
     static SwitchTo(langId) {
         hWnd := WinExist("A")
         if !hWnd
             return false
         hkl := DllCall("LoadKeyboardLayout", "Str", Format("{:08x}", langId), "Int", 1, "Ptr")
-        owner := DllCall("GetWindow", "Ptr", hWnd, "UInt", 4, "Ptr")
+        if !hkl
+            return false
+        owner := DllCall("GetWindow", "Ptr", hWnd, "UInt", 4, "Ptr")   ; GW_OWNER
         target := owner ? owner : hWnd
+        ; wParam=0 → switch by HKL; lParam = HKL целевой раскладки
         PostMessage(0x50, 0, hkl, , "ahk_id " . target)
         return true
     }

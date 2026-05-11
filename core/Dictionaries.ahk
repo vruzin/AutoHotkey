@@ -15,15 +15,18 @@ class PuntoDict {
 
     ; ------------------------------------------------------------
     ; Init — однократная загрузка обоих словарей.
-    ; Не падает при отсутствии файла (сообщает в LoadStats), чтобы Punto
-    ; могла стартовать даже без словарей (биграммы продолжат работать).
-    static Init() {
+    ; Параметр rootDir можно передать в скриптах, которые запускаются
+    ; не из корня проекта (например, из tools/). По умолчанию берётся
+    ; PuntoDict.Root() — A_ScriptDir, что подходит когда main.ahk в корне.
+    ; Не падает при отсутствии файла (сообщает в LoadStats).
+    static Init(rootDir := "") {
         if PuntoDict.Initialized
             return
 
-        root := PuntoDict.Root()
-        ruPath := root . "\data\dict\ru.bin"
-        enPath := root . "\data\dict\en.bin"
+        if (rootDir = "")
+            rootDir := PuntoDict.Root()
+        ruPath := rootDir . "\data\dict\ru.bin"
+        enPath := rootDir . "\data\dict\en.bin"
 
         t0 := A_TickCount
         PuntoDict.Ru := PuntoDict.LoadFile(ruPath)
@@ -36,8 +39,15 @@ class PuntoDict {
         PuntoDict.Initialized := true
     }
 
+    ; Root — корневой каталог проекта (где лежит main.ahk и data/).
+    ; Авто-определение: если рядом со скриптом есть data\dict\ru.bin — это корень.
+    ; Иначе поднимаемся на уровень вверх (для скриптов из tools/).
     static Root() {
-        ; A_ScriptDir == корень проекта (там main.ahk).
+        if FileExist(A_ScriptDir . "\data\dict\ru.bin")
+            return A_ScriptDir
+        parent := A_ScriptDir . "\.."
+        if FileExist(parent . "\data\dict\ru.bin")
+            return parent
         return A_ScriptDir
     }
 
@@ -46,12 +56,18 @@ class PuntoDict {
         m.CaseSense := false
         if !FileExist(path)
             return m
-        Loop Read, path
-        {
-            w := Trim(A_LoopReadLine)
+        ; ВАЖНО: открываем явно в UTF-8 (если использовать глобальный
+        ; FileEncoding или Loop Read — AHK v2 по умолчанию читает в
+        ; системной кодировке, и кириллица превращается в мусор).
+        f := FileOpen(path, "r", "UTF-8")
+        if !f
+            return m
+        while !f.AtEOF {
+            w := Trim(f.ReadLine())
             if (w != "")
                 m[w] := 1
         }
+        f.Close()
         return m
     }
 
@@ -68,41 +84,84 @@ class PuntoDict {
     }
 
     ; ------------------------------------------------------------
-    ; LooksLikeWrongLayout — основной детектор «слово введено не в той раскладке».
-    ; Возвращает Map с полями:
-    ;   wrong          — true/false
-    ;   suggestion     — слово, переписанное в правильной раскладке (если wrong)
-    ;   suggestionLang — раскладка, в которой это слово существует
-    ; Если wrong=false — остальные поля могут отсутствовать.
-    ;
-    ; Алгоритм:
-    ;   1) Если слово существует в текущем словаре — точно НЕ ошибка.
-    ;   2) Конвертируем слово в противоположную раскладку.
-    ;   3) Если конвертированное СУЩЕСТВУЕТ в словаре противоположного языка
-    ;      — это ошибка раскладки, возвращаем suggestion.
-    ;   4) Иначе — не уверены, не трогаем.
-    static LooksLikeWrongLayout(word, currentLang) {
-        if (StrLen(word) < 2)
-            return Map("wrong", false)
-
-        if PuntoDict.HasWord(word, currentLang)
-            return Map("wrong", false)
-
-        ; Если слово известно как "правильное в этом языке" пользователем
-        ; (Learning) — тоже не трогаем; проверка снаружи, не здесь.
-
-        otherLang := (currentLang = "ru") ? "en" : "ru"
-        direction := (currentLang = "ru") ? "cyr2lat" : "lat2cyr"
-        converted := PuntoLayout.Convert(word, direction)
-
-        if PuntoDict.HasWord(converted, otherLang) {
-            return Map(
-                "wrong",          true,
-                "suggestion",     converted,
-                "suggestionLang", otherLang
-            )
+    ; ClassifyWord — анализ типа символов слова.
+    ; Возвращает Map { latin: N, cyrillic: N, other: N, type: "lat"|"cyr"|"mixed"|"empty" }.
+    ; "lat" — слово целиком из латиницы (с дефисом/апострофом), таких > 0, cyr = 0.
+    ; "cyr" — то же для кириллицы.
+    ; "mixed" — есть символы обеих категорий.
+    static ClassifyWord(word) {
+        lat := 0, cyr := 0, oth := 0
+        Loop Parse, word {
+            code := Ord(A_LoopField)
+            if ((code >= 0x41 && code <= 0x5A) || (code >= 0x61 && code <= 0x7A))
+                lat++
+            else if ((code >= 0x0410 && code <= 0x044F) || code = 0x0451 || code = 0x0401)
+                cyr++
+            else
+                oth++
         }
-        return Map("wrong", false)
+        if (lat = 0 && cyr = 0)
+            type := "empty"
+        else if (lat > 0 && cyr = 0)
+            type := "lat"
+        else if (cyr > 0 && lat = 0)
+            type := "cyr"
+        else
+            type := "mixed"
+        return Map("latin", lat, "cyrillic", cyr, "other", oth, "type", type)
+    }
+
+    ; ------------------------------------------------------------
+    ; LooksLikeWrongLayout — главный детектор.
+    ; НЕ полагается на текущую раскладку Windows (она часто врёт или
+    ; запаздывает). Решение принимается ТОЛЬКО на основе символов слова:
+    ;   • Слово из латиницы (a-z): есть в en.bin → OK. Иначе конвертируем
+    ;     lat2cyr и смотрим в ru.bin — если есть, это была wrong layout.
+    ;   • Слово из кириллицы (а-я): аналогично с ru.bin → cyr2lat → en.bin.
+    ;   • Смешанные (намеренные `привОт`, цифры с буквами, идентификаторы)
+    ;     — не трогаем.
+    ; Параметр currentLang оставлен для совместимости (используется
+    ; только в Punto.HandleBreak); сам детектор его игнорирует.
+    static LooksLikeWrongLayout(word, currentLang := "") {
+        if (StrLen(word) < 2)
+            return Map("wrong", false, "reason", "too_short")
+
+        cls := PuntoDict.ClassifyWord(word)
+
+        if (cls["type"] = "lat") {
+            if PuntoDict.HasWord(word, "en")
+                return Map("wrong", false, "reason", "in_en_dict")
+            converted := PuntoLayout.Convert(word, "lat2cyr")
+            if PuntoDict.HasWord(converted, "ru") {
+                return Map(
+                    "wrong",          true,
+                    "suggestion",     converted,
+                    "suggestionLang", "ru",
+                    "fromLang",       "en",
+                    "reason",         "lat_word_is_ru_in_other_layout"
+                )
+            }
+            return Map("wrong", false, "reason", "unknown_lat")
+        }
+
+        if (cls["type"] = "cyr") {
+            if PuntoDict.HasWord(word, "ru")
+                return Map("wrong", false, "reason", "in_ru_dict")
+            converted := PuntoLayout.Convert(word, "cyr2lat")
+            if PuntoDict.HasWord(converted, "en") {
+                return Map(
+                    "wrong",          true,
+                    "suggestion",     converted,
+                    "suggestionLang", "en",
+                    "fromLang",       "ru",
+                    "reason",         "cyr_word_is_en_in_other_layout"
+                )
+            }
+            return Map("wrong", false, "reason", "unknown_cyr")
+        }
+
+        ; смешанное / пустое
+        return Map("wrong", false, "reason", "mixed_or_empty")
     }
 
     ; ------------------------------------------------------------

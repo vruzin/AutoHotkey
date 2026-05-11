@@ -16,15 +16,15 @@
 #SingleInstance Force
 #Warn All, OutputDebug             ; предупреждения не блокируют выполнение, пишутся в OutputDebug
 
-; Старт скрипта: английская раскладка + сброс залипшего CapsLock/NumLock
-SetDefaultKeyboard(0x0409)
+; Старт скрипта: только сброс залипшего CapsLock/NumLock.
+; Раскладку насильно не меняем — иначе Windows показывает плашки
+; «раскладка изменилась», и пользователю приходится их закрывать.
 SetNumLockState("Off")
 SetCapsLockState("Off")
 
 ; ----------------------------------------------------------
 ; CapsLock+R — перезагрузить скрипт
 CapsLock & r:: {
-    SetDefaultKeyboard(0x0409)
     SetNumLockState("Off")
     SetCapsLockState("Off")
     Reload

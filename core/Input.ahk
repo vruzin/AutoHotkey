@@ -16,6 +16,8 @@ class PuntoInput {
     static hook := 0
     static enabled := true
     static suppress := false
+    static debug := false
+    static debugPath := ""
 
     ; Класс символа: 1 — буква, 0 — разделитель, -1 — управляющий
     ; Кеш-таблица для частых символов: word-character (a..z, а..я, -, ').
@@ -68,22 +70,27 @@ class PuntoInput {
     ; OnChar — вызывается для каждого видимого набранного символа,
     ; уже после применения раскладки и Shift.
     static OnChar(ih, char) {
-        if PuntoInput.suppress
+        if PuntoInput.suppress {
+            PuntoInput.Log("CHAR (suppressed): " . char)
             return
+        }
         if !PuntoInput.enabled
             return
 
         if PuntoInput.IsWordChar(char) {
             PuntoInput.buffer .= char
+            PuntoInput.Log("CHAR: " . char . "  buffer=[" . PuntoInput.buffer . "]")
             return
         }
 
         ; Не-буква → завершить текущее слово (если есть) и сбросить буфер.
-        ; Передаём в Autoswitch вместе с символом-разделителем.
         if (PuntoInput.buffer != "") {
             word := PuntoInput.buffer
             PuntoInput.buffer := ""
+            PuntoInput.Log("WORD-END: word=[" . word . "] sep=[" . char . "]")
             PuntoAutoswitch.OnWordEnd(word, char)
+        } else {
+            PuntoInput.Log("SEP (empty buffer): " . char)
         }
     }
 
@@ -140,6 +147,27 @@ class PuntoInput {
         }
         SendLevel(prevSendLevel)
         PuntoInput.suppress := wasSuppress
+    }
+
+    ; ------------------------------------------------------------
+    ; Debug-logging — включается через Punto.ToggleDebug() (Ctrl+Alt+L).
+    ; Лог пишется в data/punto_events.log. Полезно когда автозамена не
+    ; срабатывает — видно что приходит из InputHook и что решает детектор.
+    static EnableDebug() {
+        PuntoInput.debugPath := A_ScriptDir . "\data\punto_events.log"
+        PuntoInput.debug := true
+        try FileDelete(PuntoInput.debugPath)
+        PuntoInput.Log("=== DEBUG ENABLED at " . A_Now . " ===")
+    }
+    static DisableDebug() {
+        PuntoInput.Log("=== DEBUG DISABLED ===")
+        PuntoInput.debug := false
+    }
+
+    static Log(line) {
+        if !PuntoInput.debug
+            return
+        try FileAppend("[" . A_TickCount . "] " . line . "`n", PuntoInput.debugPath, "UTF-8")
     }
 }
 

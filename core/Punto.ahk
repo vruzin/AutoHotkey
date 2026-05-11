@@ -28,6 +28,7 @@ class Punto {
         Hotkey("!Pause",  (*) => Punto.Toggle())
         Hotkey("^Pause",  (*) => Punto.OpenPalette())
         Hotkey("^!d",     (*) => Punto.ShowDiagnostics())
+        Hotkey("^!l",     (*) => Punto.ToggleDebug())
 
         Punto.UpdateTray()
         Punto.initialized := true
@@ -59,40 +60,46 @@ class Punto {
     ; ------------------------------------------------------------
     ; ConvertCurrentWord — заменить недонабранное слово (без разделителя)
     ; на его эквивалент в перевёрнутой раскладке + переключить раскладку
-    ; для дальнейшего ввода.
+    ; для дальнейшего ввода. Раскладка слова определяется по его символам,
+    ; не по системной раскладке.
     static ConvertCurrentWord(word) {
-        currentLang := PuntoLayout.GetActiveLang()
-        direction   := (currentLang = "ru") ? "cyr2lat" : "lat2cyr"
-        converted   := PuntoLayout.Convert(word, direction)
-        backspaces  := StrLen(word)
-        newLang     := (currentLang = "ru") ? "en" : "ru"
+        cls := PuntoDict.ClassifyWord(word)
+        if (cls["type"] = "lat") {
+            direction := "lat2cyr"
+            fromLang  := "en"
+            toLang    := "ru"
+        } else if (cls["type"] = "cyr") {
+            direction := "cyr2lat"
+            fromLang  := "ru"
+            toLang    := "en"
+        } else {
+            Punto.Flash("Не могу определить раскладку слова")
+            return
+        }
+        converted  := PuntoLayout.Convert(word, direction)
+        backspaces := StrLen(word)
 
-        PuntoInput.SendSilently((*) => Punto.DoConvert(backspaces, converted))
+        PuntoInput.SendSilently((*) => Punto.DoConvert(backspaces, converted, toLang))
 
-        ; После замены буфер обнуляем — иначе следующий разделитель попытается
-        ; обработать комбинированный word + converted как новое слово.
         PuntoInput.ResetBuffer()
 
-        ; Записываем как autoswitch — повторный Pause сразу откатит замену
-        ; (через UndoLastAutoswitch), как ожидает пользователь.
         PuntoHistory.Push(Map(
             "type",       "autoswitch",
             "wordTyped",  word,
             "wordFinal",  converted,
-            "langBefore", currentLang,
-            "langAfter",  newLang,
+            "langBefore", fromLang,
+            "langAfter",  toLang,
             "switched",   true,
             "separator",  ""
         ))
 
-        ; Запоминаем как «правильное в новой раскладке» для self-learning.
-        PuntoLearning.Record(converted, newLang)
+        PuntoLearning.Record(converted, toLang)
         Punto.Flash("⇋ " . converted)
     }
 
-    static DoConvert(backspaces, converted) {
+    static DoConvert(backspaces, converted, targetLang) {
         Send("{BS " . backspaces . "}")
-        PuntoLayout.Toggle()
+        PuntoLayout.SwitchToLang(targetLang)
         Sleep(PuntoAutoswitch.TOGGLE_DELAY_MS)
         SendText(converted)
     }
@@ -130,6 +137,21 @@ class Punto {
     static Flash(text) {
         ToolTip(text)
         SetTimer(() => ToolTip(), -1200)
+    }
+
+    ; ------------------------------------------------------------
+    ; ToggleDebug — Ctrl+Alt+L: включить/выключить запись событий в
+    ; data/punto_events.log. После включения каждый OnChar, OnWordEnd,
+    ; вердикт детектора и автозамена пишутся в файл — удобно отлаживать,
+    ; не запуская AHK-отладчик.
+    static ToggleDebug() {
+        if PuntoInput.debug {
+            PuntoInput.DisableDebug()
+            Punto.Flash("Debug OFF")
+        } else {
+            PuntoInput.EnableDebug()
+            Punto.Flash("Debug ON → data\punto_events.log")
+        }
     }
 
     ; ------------------------------------------------------------
