@@ -44,11 +44,14 @@ class PuntoInput {
     static Start() {
         if PuntoInput.hook
             return
-        ih := InputHook("V L0 I0")          ; V — пропускать символы дальше, L0 — без лимита, I0 — без таймаута
-        ih.NotifyNonText := true            ; OnKeyDown даже для невидимых клавиш
+        ; V — visible (пропускать символы дальше), L0 — без лимита по длине,
+        ; I 1 — игнорировать наши собственные Send (которые мы шлём с SendLevel >= 1),
+        ; T0 — без таймаута.
+        ih := InputHook("V L0 I1 T0")
+        ih.NotifyNonText := true
         ih.OnChar    := PuntoInput_OnChar
         ih.OnKeyDown := PuntoInput_OnKeyDown
-        ih.KeyOpt("{All}", "N")             ; уведомлять о всех клавишах
+        ih.KeyOpt("{All}", "N")
         ih.Start()
         PuntoInput.hook := ih
     }
@@ -125,12 +128,17 @@ class PuntoInput {
     static IsEnabled() => PuntoInput.enabled
 
     ; SendSilently — отправить текст, временно отключив реакцию на собственный ввод.
+    ; Использует SendLevel = 1, чтобы InputHook (с опцией I1) автоматически
+    ; игнорировал эти события.
     static SendSilently(action) {
         wasSuppress := PuntoInput.suppress
+        prevSendLevel := A_SendLevel
         PuntoInput.suppress := true
+        SendLevel(1)
         try {
             action.Call()
         }
+        SendLevel(prevSendLevel)
         PuntoInput.suppress := wasSuppress
     }
 }

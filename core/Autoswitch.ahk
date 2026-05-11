@@ -27,8 +27,9 @@ class PuntoAutoswitch {
     static TRIGGER_SEPS := " .,;:!?"
 
     ; Доп. задержка после Toggle, чтобы Windows успела применить раскладку
-    ; ко всем потокам до Send.
-    static TOGGLE_DELAY_MS := 30
+    ; ко всем потокам до Send. (SendText печатает Unicode-точки и от раскладки
+    ; не зависит, но Toggle делается для последующего пользовательского ввода.)
+    static TOGGLE_DELAY_MS := 60
 
     ; ------------------------------------------------------------
     static OnWordEnd(word, separator) {
