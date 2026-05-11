@@ -1,606 +1,313 @@
-﻿SetDefaultKeyboard(0x0409)
-SetNumLockState, Off
-SetCapsLockState, Off
+; ============================================================
+; main.ahk — AutoHotkey v2 (требует 2.0+)
+;
+; Точка входа: подключается через ярлык "main — ярлык.lnk".
+; Содержит:
+;   • глобальные хоткеи поверх всех окон (CapsLock+i, CapsLock+1..4, Win+C, …)
+;   • общие утилиты (Send2, Send3, getSelText)
+;   • контекстные хоткеи через #HotIf (для GraphCalc, IDEA, Direct Commander)
+;   • #Include всех модулей из legacy/
+;
+; Большая часть фич живёт в подключённых файлах. Здесь — то, что было в
+; корневом main.ahk до миграции на v2.
+; ============================================================
 
-; Перезагрузка скрипта горячей клавишей
-#SingleInstance Force ;put this at the top of the script
-CapsLock & r::
+#Requires AutoHotkey v2.0
+#SingleInstance Force
+
+; Старт скрипта: английская раскладка + сброс залипшего CapsLock/NumLock
 SetDefaultKeyboard(0x0409)
-SetNumLockState, Off
-SetCapsLockState, Off
-run, %A_ScriptFullPath% 
-return
+SetNumLockState("Off")
+SetCapsLockState("Off")
 
+; ----------------------------------------------------------
+; CapsLock+R — перезагрузить скрипт
+CapsLock & r:: {
+    SetDefaultKeyboard(0x0409)
+    SetNumLockState("Off")
+    SetCapsLockState("Off")
+    Reload
+}
 
-; NumpadEnd::Send {Left}
-; NumpadPgDn::Send {Right}
-; NumpadClear::Send {Up}
+; ----------------------------------------------------------
+; CapsLock+I — показать внешний и локальные IP в ToolTip
+CapsLock & i:: ShowIpAddresses()
 
-; NumpadLeft::Send {Home}
-; NumpadRight::Send {End}
-; +NumpadLeft::Send +{Home}
-; +NumpadRight::Send +{End}
+ShowIpAddresses() {
+    extIP := GetUrl("http://7fw.de/ipraw.php")
+    Send2(extIP)
+    ToolTip extIP " <- Внешний`n=====`n"
+        . A_IPAddress1 "`n" A_IPAddress2 "`n" A_IPAddress3 "`n" A_IPAddress4
+    SetTimer () => ToolTip(), -5000
+    SetNumLockState("Off")
+    SetCapsLockState("Off")
+}
 
-; NumpadAdd::
-; if (GetKeyState("NumLock", "T"))
-; {
-;     Send {PgUp}
-; }
-; Else
-; {
-;     SendRaw +
-; }
-; return
-
-; NumpadEnter::
-; if (GetKeyState("NumLock", "T"))
-; {
-;     Send {PgDn}
-; }
-; Else
-; {
-;     Send {NumpadEnter}
-; }
-; return
-
-; RAlt::Send {Break}
-; return
-; RAlt & Shift::Send +{Break}
-; return
-; RAlt & LAlt::Send !{Break}
-; return
-; RAlt & Ctrl::Send ^{Break}
-; ; RAlt & Win::Send {Win Down}{Break}{Win Up}
-; return
-
-
-
-
-
-
-
-
-CapsLock & i::
-TmpFile=%A_ScriptDir%\-\ip
-ExternalIP :=GetUrl("http://7fw.de/ipraw.php")
-Send2(ExternalIP)
-;  UrlDownloadToFile,http://7fw.de/ipraw.php,%TmpFile%
-; FileReadLine,ExternalIP,%TmpFile%,1
-ToolTip, %ExternalIP% <- Внешний`n=====`n%A_IPAddress1%`n%A_IPAddress2%`n%A_IPAddress3%`n%A_IPAddress4%`n
-SetTimer, RemoveToolTip, -5000
-SetNumLockState, Off
-SetCapsLockState, Off
-return
-
-
-
-
-GetUrl(url)
-{
-    whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+GetUrl(url) {
+    whr := ComObject("WinHttp.WinHttpRequest.5.1")
     whr.Open("GET", url, true)
     whr.Send()
-    ; Using 'true' above and the call below allows the script to remain responsive.
     whr.WaitForResponse()
-    text:=whr.ResponseText
-    return (text)
+    return whr.ResponseText
 }
 
-#IfWinActive ahk_exe Direct Commander.exe
+; ----------------------------------------------------------
+; Контекстные хоткеи: Direct Commander — фильтр-исключения
+#HotIf WinActive("ahk_exe Direct Commander.exe")
 :o:=ф::
-Send2("= Фраза !~ Купить & Фраза !~ недорого & Фраза !~ подбор & Фраза !~ подобрать & Фраза !~ прайс & Фраза !~ рассчет & Фраза !~ цена")
-return
-#IfWinActive
-
-
-; ----------------------------------------------------------
-;  Автоисправление в GraphCalc запятой на точку
-#IfWinActive ahk_exe GrphCalc.exe
-NumpadDot::
-SendRaw,.
-return
-#IfWinActive
-
-
-; ----------------------------------------------------------
-; Поверх всех окон. Win+Ctrl+Shift+t
-#^+t::  Winset, Alwaysontop, , A 
-
-
-
-#IfWinActive ahk_exe idea64.exe
-CapsLock & x::^+x
-#IfWinActive
-
-; ; ----------------------------------------------------------
-; ; MVK Workspace. Win+Ctrl+Numpad7
-; #^Numpad7::
-; SetTitleMatchMode 2
-; ; SublimeText
-; IfWinNotExist, (MVK) - Sublime Text
-; {
-;   Run, M:\Sys\SublimeText3\sublime_text.exe "m:\prg\MVK\MVK.sublime-project"
-;   WinWait, (MVK) - Sublime Text
-; }
-; WinMove, (MVK) - Sublime Text, , -1089, 700, 1101, 1373
-; ; IDEA
-; if WinExist("mvk-spb.ru ahk_exe idea64.exe")
-; {
-;   WinActivate, mvk-spb.ru ahk_exe idea64.exe
-;   Winset, Top
-; }
-; else{
-;   Run, M:\Sys\IDEA\bin\idea64.exe "m:\prg\MVK\mvk-spb.ru"
-;   WinWait, "mvk-spb.ru ahk_exe idea64.exe"
-; }
-; return
-
-
-; ; ----------------------------------------------------------
-; ; MVK Workspace. Win+Ctrl+Numpad8
-; #^Numpad8::
-; SetTitleMatchMode 2
-; ; SublimeText
-; IfWinNotExist, (Maryadi) - Sublime Text
-; {
-;   Run, M:\Sys\SublimeText3\sublime_text.exe "m:\prg\Maryadi\Maryadi.sublime-project"
-;   WinWait, (Maryadi) - Sublime Text
-; }
-; WinMove, (Maryadi) - Sublime Text, , -1089, 700, 1101, 1373
-; ; IDEA
-; if WinExist("igo2london.com ahk_exe idea64.exe")
-; {
-;   WinActivate, igo2london.com ahk_exe idea64.exe
-;   Winset, Top
-; }
-; else{
-;   Run, M:\Sys\IDEA\bin\idea64.exe "m:\prg\Maryadi\igo2london.com\"
-;   WinWait, "igo2london.com ahk_exe idea64.exe"
-; }
-; return
-
-; CapsLock + скобки и разделитель, в любой раскладке правильные
-CapsLock & Space:: 
-SelectedWord := getSelText()
-if (SelectedWord)
 {
-    SelectedWord = {|%SelectedWord%}
-    Send2(SelectedWord)
+    Send2("= Фраза !~ Купить & Фраза !~ недорого & Фраза !~ подбор & Фраза !~ подобрать & Фраза !~ прайс & Фраза !~ рассчет & Фраза !~ цена")
 }
-else{
-  SendRaw {| }
-}
-SetNumLockState, Off
-SetCapsLockState, Off
-return
+#HotIf
 
-CapsLock & \::
-SendRaw |
-SetNumLockState, Off
-SetCapsLockState, Off
-return
+; GraphCalc — десятичный разделитель: Numpad точка вместо запятой
+#HotIf WinActive("ahk_exe GrphCalc.exe")
+NumpadDot:: SendText(".")
+#HotIf
 
-CapsLock & [::
-SendRaw {
-SetNumLockState, Off
-SetCapsLockState, Off
-return
-
-CapsLock & ]::
-SendRaw }
-SetNumLockState, Off
-SetCapsLockState, Off
-return
-
+; IntelliJ IDEA — CapsLock+X = Ctrl+Shift+X (cut line или нужная команда)
+#HotIf WinActive("ahk_exe idea64.exe")
+CapsLock & x:: Send "^+x"
+#HotIf
 
 ; ----------------------------------------------------------
-; MVK Vivaldi. Win+Ctrl+Numpad4
-; --user-data-dir="M:\Sys\Vivaldi\User Data\Profile 2" - профиль из папки
-; #^Numpad4::
-; Run, M:\Sys\Vivaldi\Application\vivaldi.exe --profile-directory="Profile 2"
-; return
-
-; VR Vivaldi.
-CapsLock & 1::
-Run, M:\Sys\Vivaldi\Application\vivaldi.exe --profile-directory="Default"
-SetNumLockState, Off
-SetCapsLockState, Off
-return
-
-; Maryadi Vivaldi.
-CapsLock & 2::
-Run, M:\Sys\Vivaldi\Application\vivaldi.exe --profile-directory="Profile 1"
-SetNumLockState, Off
-SetCapsLockState, Off
-return
-
-; MVK Vivaldi.
-CapsLock & 3::
-Run, M:\Sys\Vivaldi\Application\vivaldi.exe --profile-directory="Profile 2"
-SetNumLockState, Off
-SetCapsLockState, Off
-return
-
-; FL Vivaldi.
-CapsLock & 4::
-Run, M:\Sys\Vivaldi\Application\vivaldi.exe --profile-directory="Profile 5"
-SetNumLockState, Off
-SetCapsLockState, Off
-return
-
+; Win+Ctrl+Shift+T — переключить «поверх всех окон» для активного
+#^+t:: WinSetAlwaysOnTop(-1, "A")
 
 ; ----------------------------------------------------------
-;  Калькулятор Win+C
-#c::
-IfWinExist, GraphCalc
-{ ; Если открыт, то показать, если закрыт, тогда открыть
-    WinActivate ; Использует окно, найденное выше.
-    Winset, Top
+; CapsLock+Space/[/]/=/\ — вставить кастомные разделители независимо от раскладки
+CapsLock & Space:: {
+    sel := getSelText()
+    if (sel != "")
+        Send2("【┋" . sel . "】")
+    else
+        SendText("【┋ 】")
+    SetNumLockState("Off")
+    SetCapsLockState("Off")
 }
-else {
-	Run, M:\Sys\GraphCalc\GrphCalc.exe
+
+CapsLock & \:: {
+    SendText("┋")
+    SetNumLockState("Off")
+    SetCapsLockState("Off")
 }
-return
+
+CapsLock & [:: {
+    SendText("【")
+    SetNumLockState("Off")
+    SetCapsLockState("Off")
+}
+
+CapsLock & ]:: {
+    SendText("】")
+    SetNumLockState("Off")
+    SetCapsLockState("Off")
+}
+
+CapsLock & =:: {
+    SendText("〓")
+    SetNumLockState("Off")
+    SetCapsLockState("Off")
+}
 
 ; ----------------------------------------------------------
-;  OBS Win+Insert
-#Insert::
-IfWinNotExist, OBS
-{
-    Run, M:\Sys\OBS\bin\64bit\obs64.exe, M:\Sys\OBS\bin\64bit\
-}
-else{
-    Send, #{Insert}
-}
-return
+; CapsLock+1..4 — запуск Vivaldi с разными профилями
+CapsLock & 1:: RunVivaldi("Default")        ; VR
+CapsLock & 2:: RunVivaldi("Profile 1")       ; Maryadi
+CapsLock & 3:: RunVivaldi("Profile 2")       ; MVK
+CapsLock & 4:: RunVivaldi("Profile 5")       ; FL
 
-; ; ----------------------------------------------------------
-; ; Распознавание области экрана. Shift+PrintScreen
-+PrintScreen::
-Run, "C:\Program Files\ABBYY FineReader 16\screenshotreader.exe"
-Sleep, 500 ;
-Send !{Enter}
-return
+RunVivaldi(profile) {
+    Run('M:\Sys\Vivaldi\Application\vivaldi.exe --profile-directory="' . profile . '"')
+    SetNumLockState("Off")
+    SetCapsLockState("Off")
+}
 
 ; ----------------------------------------------------------
-; Приближение с мышкой. Shift+Alt+Insert
-; У меня на клавиатуре это клавиша переключение приложений
-^+!ScrollLock::
-Process, Exist, ZoomIt.exe ;
-if %ErrorLevel% = 0
-{
-  Run, "m:\Sys\ZoomIt\ZoomIt.exe"
-}
-Send ^+!{ScrollLock}
-return
-
-; ----------------------------------------------------------
-; Приближение без мышки. Ctrl+Shift+Alt+Insert
-; У меня на клавиатуре это клавиша переключение приложений с зажатой Ctrl
-^+!Insert::
-Process, Exist, ZoomIt.exe ;
-if %ErrorLevel% = 0
-{
-  Run, "m:\Sys\ZoomIt\ZoomIt.exe"
-}
-Send ^+!{Insert}
-return
-
-
-
-
-
-
-
-; ; ----------------------------------------------------------
-; ; Выравнивание чатов в правом мониторе. Win+Ctrl+Numpad0
-; #^Numpad0::
-; IfWinExist, Viber
-; {
-;     WinActivate ; Использует окно, найденное выше.
-;     Winset, Top
-; }
-; else {
-;   Run, "%userprofile%\AppData\Local\Viber\Viber.exe"
-; }
-; IfWinExist, WhatsApp
-; {
-;   WinActivate ; Использует окно, найденное выше.
-;   Winset, Top
-; }
-; else {
-; 	Run, "%userprofile%\AppData\Local\WhatsApp\WhatsApp.exe"
-; }
-; IfWinExist, Telegram
-; {
-; 	WinActivate ; Использует окно, найденное выше.
-;   Winset, Top
-; }
-; else {
-; 	Run, "M:\Sys\Telegram\Telegram.exe"
-; }
-; IfWinExist, Skype
-; {
-;   WinActivate ; Использует окно, найденное выше.
-;   Winset, Top
-; }
-; else {
-; 	Run, "C:\Program Files (x86)\Microsoft\Skype for Desktop\Skype.exe"
-; }
-; WinMove, Telegram, , 3840, 314, 799, 1080
-; WinMove, Viber, , 4632, 776, 914, 625
-; WinMove, WhatsApp, , 4639, 314, 900, 648
-; Winset, Top
-; WinMove, Skype, , 5532, 314, 875, 1088
-; return
-
-; ; ----------------------------------------------------------
-; ; Все чаты на фон. Win+Ctrl+Numpad0
-; #^NumpadDot::  
-; Winset, Bottom, , WhatsApp
-; Winset, Bottom, , Telegram
-; Winset, Bottom, , Viber
-; Winset, Bottom, , Skype
-; return
-
-
-
-
-
-
-
-
-
-
-
-
-GetInputLangID(window)  {
-   if !hWnd := WinExist(window)
-      return
-
-   WinGetClass, winClass
-   if (winClass != "ConsoleWindowClass") || (b := SubStr(A_OSVersion, 1, 2) = "10")  {
-      if b  {
-         WinGet, consolePID, PID
-         childConhostPID := GetCmdChildConhostPID(consolePID)
-         dhw_prev := A_DetectHiddenWindows
-         DetectHiddenWindows, On
-         hWnd := WinExist("ahk_pid " . childConhostPID)
-         DetectHiddenWindows, % dhw_prev
-      }
-      threadId := DllCall("GetWindowThreadProcessId", Ptr, hWnd, UInt, 0)
-      lyt := DllCall("GetKeyboardLayout", Ptr, threadId, UInt)
-      langID := Format("{:#x}", lyt & 0x3FFF)
-   }
-   else  {
-      WinGet, consolePID, PID
-      DllCall("AttachConsole", Ptr, consolePID)
-      VarSetCapacity(lyt, 16)
-      DllCall("GetConsoleKeyboardLayoutName", Str, lyt)
-      DllCall("FreeConsole")
-      langID := "0x" . SubStr(lyt, -4)
-   }
-   return langID
-}
-
-GetCmdChildConhostPID(CmdPID)  {
-   static TH32CS_SNAPPROCESS := 0x2, MAX_PATH := 260
-   
-   h := DllCall("CreateToolhelp32Snapshot", UInt, TH32CS_SNAPPROCESS, UInt, 0, Ptr)
-   VarSetCapacity(PROCESSENTRY32, size := 4*7 + A_PtrSize*2 + (MAX_PATH << !!A_IsUnicode), 0)
-   NumPut(size, PROCESSENTRY32, "UInt")
-   res := DllCall("Process32First", Ptr, h, Ptr, &PROCESSENTRY32)
-   while res  {
-      parentPid := NumGet(PROCESSENTRY32, 4*4 + A_PtrSize*2, "UInt")
-      if (parentPid = CmdPID)  {
-         exeName := StrGet(&PROCESSENTRY32 + 4*7 + A_PtrSize*2, "CP0")
-         if (exeName = "conhost.exe" && PID := NumGet(PROCESSENTRY32, 4*2, "UInt"))
-            break
-      }
-      res := DllCall("Process32Next", Ptr, h, Ptr, &PROCESSENTRY32)
-   }
-   DllCall("CloseHandle", Ptr, h)
-   Return PID
-}
- 
-GetInputLangName(langId)  {
-   static LOCALE_SENGLANGUAGE := 0x1001
-   charCount := DllCall("GetLocaleInfo", UInt, langId, UInt, LOCALE_SENGLANGUAGE, UInt, 0, UInt, 0)
-   VarSetCapacity(localeSig, size := charCount << !!A_IsUnicode, 0)
-   DllCall("GetLocaleInfo", UInt, langId, UInt, LOCALE_SENGLANGUAGE, Str, localeSig, UInt, size)
-   return localeSig
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-; ----------------------------------------------------------
-; Win+Ctrl+Numpad1
-; Смена темной и светлой темы приложений Windows. 
-MenuHandler3:
-RegRead, OutputVar, HKEY_CURRENT_USER, SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize, AppsUseLightTheme
-if %OutputVar%=0
-{
-  RegWrite, REG_DWORD, HKEY_CURRENT_USER, SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize, AppsUseLightTheme, 1
-} else {
-  RegWrite, REG_DWORD, HKEY_CURRENT_USER, SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize, AppsUseLightTheme, 0
-}
-RegRead, OutputVar2, HKEY_CURRENT_USER, SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize, AppsUseLightTheme
-; MsgBox, Было %OutputVar%, стало %OutputVar2%
-return
-
-MenuHandler:
-RegWrite, REG_SZ, HKEY_LOCAL_MACHINE, SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon, Shell, explorer.exe
-return 
-
-MenuHandler2:
-RegWrite, REG_SZ, HKEY_LOCAL_MACHINE, SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon, Shell, M:\Sys\tc\TotalCmd64.exe /f=y:\TC\wcx_ftp.ini
-return 
-
-#z::
-Menu, MyMenu, add, Установить Explorer проводником, MenuHandler  ; Добавить новый пункт.
-Menu, MyMenu, add, Установить Total Commander проводником, MenuHandler2  ; Добавить новый пункт.
-Menu, MyMenu, add  ; Добавить разделитель.
-Menu, MyMenu, add, Сменить тему Windows Светлая-Темная, MenuHandler3  ; Добавить новый пункт.
-Menu, MyMenu, Show  ; Показывать меню по нажатию Win-Z. 
-return
-
-
-
-; Возвращает выделенный текст
-getSelText()
-{
-    ClipboardOld:=ClipboardAll
-    Clipboard:=""
-    SendInput, ^{c}
-    ClipWait, 0.1
-    if(!ErrorLevel)
-    {
-        selText:=Clipboard
-        Clipboard:=ClipboardOld
-        StringRight, lastChar, selText, 1
-        if(Asc(lastChar)!=10) ;if last char is not line feed
-        {
-            return selText
-        }
+; Win+C — активировать или запустить GraphCalc
+#c:: {
+    if WinExist("GraphCalc") {
+        WinActivate
+        WinSetAlwaysOnTop(1)
+    } else {
+        Run("M:\Sys\GraphCalc\GrphCalc.exe")
     }
-    Clipboard:=ClipboardOld
-    return
 }
 
+; ----------------------------------------------------------
+; Win+Insert — активировать или запустить OBS Studio
+#Insert:: {
+    if !WinExist("OBS")
+        Run("M:\Sys\OBS\bin\64bit\obs64.exe", "M:\Sys\OBS\bin\64bit\")
+    else
+        Send "#{Insert}"
+}
 
+; ----------------------------------------------------------
+; Shift+PrintScreen — ABBYY FineReader ScreenshotReader (распознавание области)
++PrintScreen:: {
+    Run('"C:\Program Files\ABBYY FineReader 16\screenshotreader.exe"')
+    Sleep 500
+    Send "!{Enter}"
+}
 
+; ----------------------------------------------------------
+; Ctrl+Shift+Alt+ScrollLock — ZoomIt (приближение с мышкой)
+^+!ScrollLock:: {
+    if !ProcessExist("ZoomIt.exe")
+        Run('"m:\Sys\ZoomIt\ZoomIt.exe"')
+    Send "^+!{ScrollLock}"
+}
+
+; Ctrl+Shift+Alt+Insert — ZoomIt (приближение без мышки)
+^+!Insert:: {
+    if !ProcessExist("ZoomIt.exe")
+        Run('"m:\Sys\ZoomIt\ZoomIt.exe"')
+    Send "^+!{Insert}"
+}
+
+; ----------------------------------------------------------
+; Win+Z — меню системных переключателей (Shell, тема Windows)
+#z:: ShowSystemMenu()
+
+ShowSystemMenu() {
+    m := Menu()
+    m.Add("Установить Explorer проводником", SetShellExplorer)
+    m.Add("Установить Total Commander проводником", SetShellTotalCmd)
+    m.Add()
+    m.Add("Сменить тему Windows Светлая-Темная", ToggleWindowsTheme)
+    m.Show()
+}
+
+SetShellExplorer(*) {
+    RegWrite("explorer.exe", "REG_SZ",
+        "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon", "Shell")
+}
+
+SetShellTotalCmd(*) {
+    RegWrite("M:\Sys\tc\TotalCmd64.exe /f=y:\TC\wcx_ftp.ini", "REG_SZ",
+        "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon", "Shell")
+}
+
+ToggleWindowsTheme(*) {
+    key := "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+    cur := RegRead(key, "AppsUseLightTheme", 1)
+    RegWrite(1 - cur, "REG_DWORD", key, "AppsUseLightTheme")
+}
+
+; ----------------------------------------------------------
+; CapsLock+G — генерация пароля длиной 12 символов
+CapsLock & g:: GeneratePassword()
+
+GeneratePassword() {
+    pools := [
+        "abcdefghijklmnopqrstuvwxyz",
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        "1234567890",
+        "?#<>%@/",
+        "!$%^&*+~`()_=-[]{}\|,.:;"
+    ]
+    all := ""
+    for p in pools
+        all .= p
+
+    length := 12
+    password := ""
+    maxLen := StrLen(all)
+    Loop {
+        ch := SubStr(all, Random(1, maxLen), 1)
+        if !InStr(password, ch)
+            password .= ch
+        if (StrLen(password) >= length)
+            break
+    }
+
+    Send2(password)
+    SetNumLockState("Off")
+    SetCapsLockState("Off")
+}
+
+; ============================================================
+; ОБЩИЕ УТИЛИТЫ (видны из всех подключаемых модулей)
+; ============================================================
+
+; ----------------------------------------------------------
+; Send2 — основная функция ввода через буфер обмена.
+; Используется для всех русских/Unicode/многострочных вставок, потому что
+; прямой Send не работает корректно в части приложений (Telegram, OBS и др.).
 Send2(sText) {
-    ClipBackup:= ClipboardAll
-    Clipboard := sText
-    ClipWait
-    Sleep, 400 ;
-    Send ^v
-    Clipboard := ClipBackup
-    ClipWait
-} ; eofun
-
-
-
-
-
-
-
-; Генерация пароля
-CapsLock & g:: 
-length := 12
-;possible := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"   
-possible1 := "abcdefghijklmnopqrstuvwxyz"   
-possible2 := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"   
-possible3 := "1234567890"   
-possible4 := "?#<>%@/"   
-possible5 := "!$%^&*+~`()_=-[]{}\|,.:;"
-possible := possible1 possible2 possible3 possible4 possible5
-password := ""
-; MsgBox, % possible
-StringLen, max, possible
-Loop {
-    Random, rand, 1, max
-    StringMid, char, possible, rand, 1
-    if !InStr(password, char) 
-        password .= char
-    if StrLen(password) >= length 
-        break
+    clipBak := ClipboardAll()
+    A_Clipboard := sText
+    ClipWait()
+    Sleep 400
+    Send "^v"
+    A_Clipboard := clipBak
+    ClipWait()
 }
-Send2(password)
-SetNumLockState, Off
-SetCapsLockState, Off
-return
 
+; Send3 — то же, но с меньшей задержкой (200мс).
+; Используется в kitty.ahk и fl.ahk, где Send2 слишком медленный.
+Send3(sText) {
+    clipBak := ClipboardAll()
+    A_Clipboard := sText
+    ClipWait()
+    Sleep 200
+    Send "^v"
+    A_Clipboard := clipBak
+    ClipWait()
+}
 
+; ----------------------------------------------------------
+; getSelText — получить выделенный текст через временный Ctrl+C.
+; Сохраняет и восстанавливает буфер обмена. Возвращает "" при таймауте.
+getSelText() {
+    clipBak := ClipboardAll()
+    A_Clipboard := ""
+    SendInput "^c"
+    if !ClipWait(0.1) {
+        A_Clipboard := clipBak
+        return ""
+    }
+    sel := A_Clipboard
+    A_Clipboard := clipBak
+    ; Отсекаем хвостовой перевод строки, если он есть
+    if (sel != "" && Ord(SubStr(sel, -1)) = 10)
+        return sel
+    return sel
+}
 
-
-
-
-
-
-
-
-
-
-CapsLock & =::
-SetNumLockState, Off
-SetCapsLockState, Off
-ClipBackup:= ClipboardAll
-Send ^c
-ClipWait
-sText := Clipboard
-sValue := Eval( sText )
-Clipboard := sText+" = "+sValue
-ClipWait
-Send ^v
-Clipboard := ClipBackup
-ClipWait
-return
-
-
-
-
-
-; ;- keyboardx Capn Odin
-; ;https://autohotkey.com/boards/viewtopic.php?f=6&t=18519
-; ^0::SetDefaultKeyboard(0x0807) ; swiss-german
-; ^1::SetDefaultKeyboard(0x0406) ; Danish
-; ^2::SetDefaultKeyboard(0x0409) ; English (USA)
-; ^3::SetDefaultKeyboard(0x0411) ; Japanese
-; ^4::SetDefaultKeyboard(0x0408) ; Greek
-;SetDefaultKeyboard(0x0419) ; Russian
-; return
-SetDefaultKeyboard(LocaleID){
-    Global
+; ----------------------------------------------------------
+; SetDefaultKeyboard — установить раскладку для всех окон системы.
+SetDefaultKeyboard(localeId) {
     SPI_SETDEFAULTINPUTLANG := 0x005A
     SPIF_SENDWININICHANGE := 2
-    Lan := DllCall("LoadKeyboardLayout", "Str", Format("{:08x}", LocaleID), "Int", 0)
-    VarSetCapacity(Lan%LocaleID%, 4, 0)
-    NumPut(LocaleID, Lan%LocaleID%)
-    DllCall("SystemParametersInfo", "UInt", SPI_SETDEFAULTINPUTLANG, "UInt", 0, "UPtr", &Lan%LocaleID%, "UInt", SPIF_SENDWININICHANGE)
-    WinGet, windows, List
-    Loop %windows% {
-        PostMessage 0x50, 0, %Lan%, , % "ahk_id " windows%A_Index%
-    }
+
+    DllCall("LoadKeyboardLayout", "Str", Format("{:08x}", localeId), "Int", 0)
+
+    buf := Buffer(4, 0)
+    NumPut("UInt", localeId, buf)
+    DllCall("SystemParametersInfo",
+        "UInt", SPI_SETDEFAULTINPUTLANG,
+        "UInt", 0,
+        "Ptr",  buf,
+        "UInt", SPIF_SENDWININICHANGE)
+
+    ; Разослать WM_INPUTLANGCHANGEREQUEST всем окнам
+    ids := WinGetList()
+    for hwnd in ids
+        PostMessage(0x50, 0, localeId, , "ahk_id " . hwnd)
 }
-return
 
-
-
-OnClipboardChange:
-if(A_EventInfo=1)
-    {
-        text_selected := true
-        text_in_clipboard := ClipboardAll
-        ; ToolTip text is selected
-        ; Sleep 1000
-        ; ToolTip
-    }
-else {
-    text_selected := false
-    text_in_clipboard := ""
-}
-return
-
-
-#Include abbreviations.ahk
-#Include GoogleTranslate.ahk
-#Include kitty.ahk
-#Include main-menu.ahk
-#Include dop_menu.ahk
-#Include Eval.ahk
-#Include build.ahk
-#Include Direct.ahk
-#Include fl.ahk
-#Include Docker.ahk
-; #Include Punto.ahk
+; ============================================================
+; ПОДКЛЮЧЕНИЕ МОДУЛЕЙ
+; ============================================================
+#Include legacy\abbreviations.ahk
+#Include legacy\GoogleTranslate.ahk
+#Include legacy\kitty.ahk
+#Include legacy\main-menu.ahk
+#Include legacy\dop_menu.ahk
+#Include legacy\build.ahk
+#Include legacy\Direct.ahk
+#Include legacy\fl.ahk
+#Include legacy\Docker.ahk
+#Include legacy\CapsLock_double.ahk
