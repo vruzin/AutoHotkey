@@ -27,6 +27,7 @@ class Punto {
 
         ; Хоткеи. Стандартная клавиша PuntoSwitcher — Pause (она же Break без Ctrl).
         Hotkey("Pause",   (*) => Punto.HandleBreak())
+        Hotkey("+Pause",  (*) => Punto.ConvertSelection())
         Hotkey("!Pause",  (*) => Punto.Toggle())
         Hotkey("^Pause",  (*) => Punto.OpenPalette())
         Hotkey("^!d",     (*) => Punto.ShowDiagnostics())
@@ -50,25 +51,86 @@ class Punto {
 
     ; ------------------------------------------------------------
     ; HandleBreak — реакция на Pause.
-    ; Приоритеты:
-    ;   1) Если пользователь сейчас набирает слово (buffer не пуст) — переключить ЕГО.
-    ;   2) Иначе — попробовать откатить «свежую» автозамену.
-    ;   3) Иначе — конвертировать последнее завершённое слово из истории.
+    ;
+    ; Унифицированная toggle-логика: каждое нажатие переключает
+    ; раскладку ТОГО ЖЕ места на экране туда-обратно.
+    ;   1) Если в буфере набирается слово → конвертировать его
+    ;      и положить в History как «текущее».
+    ;   2) Иначе → конвертировать последнюю запись истории, ОБНОВЛЯЯ её
+    ;      на новое состояние (не Pop). Поэтому повторное Pause переключит
+    ;      её обратно, и так далее.
     static HandleBreak() {
         currentWord := PuntoInput.GetBuffer()
         if (currentWord != "" && StrLen(currentWord) >= 1) {
             Punto.ConvertCurrentWord(currentWord)
             return
         }
-        if PuntoAutoswitch.UndoLastAutoswitch() {
-            Punto.Flash("Откат автозамены")
+
+        last := PuntoHistory.Last()
+        if (last.Count = 0) {
+            Punto.Flash("Нечего переключать")
             return
         }
-        if PuntoAutoswitch.ConvertLastWord() {
-            Punto.Flash("Раскладка слова переключена")
+        if !Punto.ConvertHistoryEntry(last)
+            Punto.Flash("Нечего переключать (смешанный регистр)")
+    }
+
+    ; ------------------------------------------------------------
+    ; ConvertHistoryEntry — конвертировать слово из записи истории
+    ; на ЕЁ месте на экране. ВАЖНО: обновляет запись in-place, не pop.
+    ; Возвращает true, если конвертация произошла.
+    static ConvertHistoryEntry(entry) {
+        word := entry["wordFinal"]
+        sep  := entry.Has("separator") ? entry["separator"] : ""
+        if (word = "")
+            return false
+
+        cls := PuntoDict.ClassifyWord(word)
+        if (cls["type"] = "lat") {
+            direction := "lat2cyr"
+            newLang   := "ru"
+        } else if (cls["type"] = "cyr") {
+            direction := "cyr2lat"
+            newLang   := "en"
+        } else {
+            return false
+        }
+        converted  := PuntoLayout.Convert(word, direction)
+        backspaces := StrLen(word) + StrLen(sep)
+
+        PuntoInput.SendSilently(
+            (*) => PuntoAutoswitch.DoReplacement(backspaces, sep, converted, newLang))
+
+        ; Обновляем запись in-place: следующее Pause снова конвертирует.
+        entry["wordTyped"]  := word
+        entry["wordFinal"]  := converted
+        entry["langBefore"] := (newLang = "ru") ? "en" : "ru"
+        entry["langAfter"]  := newLang
+        entry["switched"]   := true
+        entry["timestamp"]  := A_TickCount
+
+        PuntoLearning.Record(converted, newLang)
+        Punto.Flash("⇋ " . converted)
+        return true
+    }
+
+    ; ------------------------------------------------------------
+    ; ConvertSelection — Shift+Pause: переключить раскладку выделенного
+    ; текста, не сбивая выделение.
+    static ConvertSelection() {
+        text := PuntoCase.GetSelection()
+        if (text = "") {
+            Punto.Flash("Ничего не выделено")
             return
         }
-        Punto.Flash("Нечего отменять")
+        ; Используем AutoConvert — он сам решает направление по содержимому
+        info := PuntoLayout.AutoConvert(text)
+        converted := info["text"]
+        PuntoCase.PutSelection(converted)
+        ; Переключим системную раскладку под результат, для дальнейшего ввода
+        targetLang := (info["direction"] = "cyr2lat") ? "en" : "ru"
+        PuntoLayout.SwitchToLang(targetLang)
+        Punto.Flash("⇋ выделение → " . targetLang)
     }
 
     ; ------------------------------------------------------------

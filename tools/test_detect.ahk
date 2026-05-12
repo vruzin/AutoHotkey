@@ -41,6 +41,11 @@ cases := [
     Map("word", "ьыл",          "wrong", false, "sugg", ""),       ; msl — не слово в en
     Map("word", "ab",           "wrong", false, "sugg", ""),
     Map("word", "a",            "wrong", false, "sugg", ""),
+    ; Регистр кириллицы — частая ловушка (Map.CaseSense на не-ru локали)
+    Map("word", "При",          "wrong", false, "sugg", ""),
+    Map("word", "ПРИВЕТ",       "wrong", false, "sugg", ""),
+    Map("word", "Привет",       "wrong", false, "sugg", ""),
+    Map("word", "ГдЕ",          "wrong", false, "sugg", ""),
 ]
 
 passed := 0

@@ -82,9 +82,18 @@
 #!u:: Send2("?utm_source=yandex&utm_medium=cpc&utm_campaign={campaign_id}&utm_content={ad_id}&utm_term={keyword}")
 
 ; ----------------------------------------------------------
-; В зависимости от времени суток
-::ДД:: Hello()
-::LL:: Hello()
+; В зависимости от времени суток. В AHK v2 hotstring без X-флага
+; выполняет ТОЛЬКО подстановку текста; чтобы вызвать функцию — нужен
+; либо :X: префикс (execute), либо блочное тело {…}.
+; C-флаг = case-sensitive: иначе ::LL:: ловит «ll», «Ll», «lL».
+:C:ДД::
+{
+    Hello()
+}
+:C:LL::
+{
+    Hello()
+}
 
 Hello() {
     if (A_Hour < 5)

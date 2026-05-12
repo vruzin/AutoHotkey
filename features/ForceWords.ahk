@@ -92,24 +92,22 @@ class PuntoForceWords {
     ; ------------------------------------------------------------
     ; Find — для слова любой раскладки/регистра вернуть «канонический»
     ; вариант, если найден в списке. Иначе пустую строку.
+    ; ВАЖНО: явно нормализуем регистр (Map.CaseSense не надёжен для
+    ; кириллицы вне ru-локали).
     static Find(word) {
         PuntoForceWords.Init()
         if (word = "")
             return ""
 
-        ; Прямое совпадение
-        if PuntoForceWords.lookup.Has(word)
-            return PuntoForceWords.lookup[word]
+        low := StrLower(word)
+        if PuntoForceWords.lookup.Has(low)
+            return PuntoForceWords.lookup[low]
 
-        ; Если слово набрано в неправильной раскладке — конвертируем и пробуем снова
         cls := PuntoDict.ClassifyWord(word)
         if (cls["type"] = "cyr") {
-            asLat := PuntoLayout.Convert(word, "cyr2lat")
+            asLat := StrLower(PuntoLayout.Convert(word, "cyr2lat"))
             if PuntoForceWords.lookup.Has(asLat)
                 return PuntoForceWords.lookup[asLat]
-        } else if (cls["type"] = "lat") {
-            if PuntoForceWords.lookup.Has(word)
-                return PuntoForceWords.lookup[word]
         }
         return ""
     }

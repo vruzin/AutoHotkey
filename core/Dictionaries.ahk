@@ -73,9 +73,12 @@ class PuntoDict {
 
     ; ------------------------------------------------------------
     ; HasWord — есть ли слово в общем словаре указанного языка.
+    ; ВАЖНО: Map.CaseSense := false для кириллицы зависит от системной
+    ; локали; чтобы не зависеть — явно нормализуем регистр.
     static HasWord(word, lang) {
         if !PuntoDict.Initialized
             PuntoDict.Init()
+        word := StrLower(word)
         if (lang = "ru")
             return PuntoDict.Ru.Has(word)
         if (lang = "en")

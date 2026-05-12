@@ -107,25 +107,28 @@ CapsLock & Space:: {
     SetCapsLockState("Off")
 }
 
-CapsLock & \:: {
+; Scancode-форма работает физически независимо от раскладки и не вызывает
+; предупреждение «hotkey does not exist in the current keyboard layout».
+;   SC02B = \   SC01A = [   SC01B = ]   SC00D = =
+CapsLock & SC02B:: {
     SendText("┋")
     SetNumLockState("Off")
     SetCapsLockState("Off")
 }
 
-CapsLock & [:: {
+CapsLock & SC01A:: {
     SendText("【")
     SetNumLockState("Off")
     SetCapsLockState("Off")
 }
 
-CapsLock & ]:: {
+CapsLock & SC01B:: {
     SendText("】")
     SetNumLockState("Off")
     SetCapsLockState("Off")
 }
 
-CapsLock & =:: {
+CapsLock & SC00D:: {
     SendText("〓")
     SetNumLockState("Off")
     SetCapsLockState("Off")
