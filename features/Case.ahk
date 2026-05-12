@@ -161,9 +161,18 @@ class PuntoCase {
         ClipWait(0.4)
         Send "^v"
         Sleep 80
-        ; Восстановить выделение «назад» от текущего курсора на длину текста
-        Send "+{Left " . StrLen(text) . "}"
+        ; Восстановить выделение «назад» от курсора. Считаем «визуальные»
+        ; символы: каждый перевод строки (\r\n или \r или \n) — это
+        ; одна позиция курсора, а не два байта.
+        Send "+{Left " . PuntoCase.VisualLen(text) . "}"
         Sleep 30
         A_Clipboard := bak
+    }
+
+    ; VisualLen: длина в позициях курсора. CR/LF/CRLF считаются за 1.
+    static VisualLen(text) {
+        n := StrReplace(text, "`r`n", "`n")
+        n := StrReplace(n, "`r", "`n")
+        return StrLen(n)
     }
 }

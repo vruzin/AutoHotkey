@@ -46,6 +46,10 @@ cases := [
     Map("word", "ПРИВЕТ",       "wrong", false, "sugg", ""),
     Map("word", "Привет",       "wrong", false, "sugg", ""),
     Map("word", "ГдЕ",          "wrong", false, "sugg", ""),
+    ; Слова, набранные в EN-раскладке с использованием [ ] ; '
+    ; (которые в RU-раскладке = х ъ ж э).
+    Map("word", "cby[hjafpfnhjy", "wrong", false, "sugg", ""),  ; синхрофазатрон — нет в топ-50к
+    Map("word", "vfh[",          "wrong", false, "sugg", ""),   ; марх — мусор
 ]
 
 passed := 0

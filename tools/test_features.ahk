@@ -31,6 +31,9 @@ Assert(name, got, want) {
 }
 
 Out("=== Case ===")
+Assert("VisualLen-CRLF",  PuntoCase.VisualLen("a`r`nb"),       3)   ; 3 позиции (a, \n, b)
+Assert("VisualLen-LF",    PuntoCase.VisualLen("a`nb"),         3)
+Assert("VisualLen-flat",  PuntoCase.VisualLen("Hello"),        5)
 Assert("Upper",       PuntoCase.UpperText("Hello, Мир"),    "HELLO, МИР")
 Assert("Lower",       PuntoCase.LowerText("Hello, МИР"),    "hello, мир")
 Assert("Title",       PuntoCase.TitleText("hello world"),   "Hello World")
