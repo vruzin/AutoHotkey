@@ -148,6 +148,14 @@ class WebApp {
         this._ShowCentered()
         try WinActivate("ahk_id " . this.gui.Hwnd)
 
+        ; Закруглённые углы окна (Win11 DWM). DWMWA_WINDOW_CORNER_PREFERENCE=33,
+        ; значение 2 = DWMWCP_ROUND. На Win10 вызов просто игнорируется.
+        try {
+            pref := Buffer(4, 0), NumPut("Int", 2, pref)
+            DllCall("dwmapi\DwmSetWindowAttribute", "ptr", this.gui.Hwnd,
+                "uint", 33, "ptr", pref, "uint", 4)
+        }
+
         ; Все пути считаем от КОРНЯ ПРОЕКТА, а не A_ScriptDir: иначе при запуске
         ; вспомогательного скрипта из tools\ пути ломаются. Корень = папка над ui\.
         root := WebApp._Root()
@@ -158,6 +166,11 @@ class WebApp {
         this.wvc := WebView2.CreateControllerAsync(this.gui.Hwnd, 0, dataDir, "", loader).await2()
         this.wv  := this.wvc.CoreWebView2
 
+        ; Фон WebView2 по умолчанию белый — в углах (между DWM-скруглением окна
+        ; и CSS-скруглением .launcher) он просвечивал белым. Ставим тёмный под
+        ; цвет окна. Формат 0x00BBGGRR (альфа 0 = непрозрачный для контроллера).
+        try this.wvc.DefaultBackgroundColor := 0x001E1E1E
+
         ; Мост Vue → AHK: host-объект "ahk" с методами dispatch/getInitData.
         host := {
             dispatch:    ObjBindMethod(this, "_Dispatch"),
@@ -165,10 +178,20 @@ class WebApp {
         }
         this.wv.AddHostObjectToScript("ahk", host)
 
-        ; Навигация на локальный index.html приложения.
-        path := root . "\ui\apps\" . this.name . "\index.html"
-        url  := "file:///" . StrReplace(path, "\", "/")
-        this.wv.Navigate(url)
+        ; Виртуальные хосты вместо file:// — нужно для Monaco Editor (его loader
+        ; и web-workers не работают по file://). Папка приложения → app.local,
+        ; библиотеки (vue, monaco) → lib.local. Доступ только на чтение (1).
+        try {
+            ; app.local → корень ui\apps (чтобы был доступен и _shared, и сами
+            ; приложения по пути <имя>/...).
+            this.wv.SetVirtualHostNameToFolderMapping("app.local",
+                root . "\ui\apps", 1)
+            this.wv.SetVirtualHostNameToFolderMapping("lib.local",
+                root . "\lib", 1)
+        }
+
+        ; Навигация через виртуальный хост (а не file://).
+        this.wv.Navigate("https://app.local/" . this.name . "/index.html")
 
         ; Фокус полю поиска даёт сам Vue (searchInput.focus() в onMounted).
 

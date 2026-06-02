@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AutoHotkey — Настройки</title>
-  <!-- Vue 3 (global build) локально, общий мост, затем приложение. -->
-  <script src="../../../lib/vue.global.prod.js"></script>
-  <script src="../_shared/bridge.js"></script>
+  <title>AutoHotkey — Лаунчер</title>
+  <!-- Пути через виртуальные хосты WebView2 (см. ui/WebApp.ahk):
+       lib.local → папка lib (vue, monaco), app.local → папка ui/apps. -->
+  <script src="https://lib.local/vue.global.prod.js"></script>
+  <script src="https://app.local/_shared/bridge.js"></script>
+  <!-- Monaco Editor: AMD-загрузчик. Сам редактор подгружается лениво (app.js). -->
+  <script src="https://lib.local/monaco/vs/loader.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>

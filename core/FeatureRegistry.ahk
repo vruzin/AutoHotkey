@@ -66,10 +66,15 @@ class FeatureRegistry {
         FeatureRegistry.EnsureGroup(group)
         hkEnabled := FeatureRegistry._GetSavedHotkey(id, default)
 
+        ; Оверрайд клавиши из settings (пользователь переназначил из лаунчера).
+        ov := FeatureRegistry._GetOverride(id)
+        effKey := (ov.Has("key") && ov["key"] != "") ? ov["key"] : key
+        trigger := ov.Has("trigger") ? ov["trigger"] : ""
+
         item := Map(
             "id", id, "group", group, "label", label,
-            "key", key, "fn", fn, "kind", "hotkey",
-            "enabled", hkEnabled, "default", default
+            "key", effKey, "defaultKey", key, "fn", fn, "kind", "hotkey",
+            "enabled", hkEnabled, "default", default, "trigger", trigger
         )
         FeatureRegistry._Store(id, item)
 
@@ -117,6 +122,48 @@ class FeatureRegistry {
     }
 
     ; ------------------------------------------------------------
+    ; SetKey — переназначить клавишу хоткея (захват комбинации из лаунчера).
+    ; newKey — в синтаксисе AHK ("^+!u"). Снимает старый Hotkey, ставит новый,
+    ; сохраняет в features.overrides. Возвращает Map(ok, error?).
+    static SetKey(id, newKey) {
+        if !FeatureRegistry.items.Has(id)
+            return Map("ok", false, "error", "нет такого хоткея")
+        item := FeatureRegistry.items[id]
+        if (item["kind"] != "hotkey")
+            return Map("ok", false, "error", "это не хоткей")
+        if (newKey = "")
+            return Map("ok", false, "error", "пустая комбинация")
+
+        ; Конфликт: та же клавиша у другого включённого хоткея.
+        for otherId in FeatureRegistry.order {
+            if (otherId = id)
+                continue
+            other := FeatureRegistry.items[otherId]
+            if (other["kind"] = "hotkey" && other["key"] = newKey)
+                return Map("ok", false, "error", "занято: " . other["label"])
+        }
+
+        ; Снять старую привязку.
+        try Hotkey(item["key"], item["fn"], "Off")
+        item["key"] := newKey
+        grOn := FeatureRegistry.groups[item["group"]]["enabled"]
+        FeatureRegistry._Apply(item, item["enabled"] && grOn)
+        FeatureRegistry._SaveOverride(id, "key", newKey)
+        return Map("ok", true)
+    }
+
+    ; ------------------------------------------------------------
+    ; SetTrigger — задать «горячее сокращение» (dp → docker ps) для команды.
+    ; Триггер срабатывает только в лаунчере (точное совпадение). "" — снять.
+    static SetTrigger(id, trigger) {
+        if !FeatureRegistry.items.Has(id)
+            return Map("ok", false, "error", "нет такой команды")
+        FeatureRegistry.items[id]["trigger"] := trigger
+        FeatureRegistry._SaveOverride(id, "trigger", trigger)
+        return Map("ok", true)
+    }
+
+    ; ------------------------------------------------------------
     ; SetGroupEnabled — переключить всю группу (каскад на дочерние).
     ; Индивидуальные флаги сохраняются — при включении группы восстановятся.
     static SetGroupEnabled(group, on) {
@@ -149,7 +196,8 @@ class FeatureRegistry {
                     "label", item["label"],
                     "key", item["key"],
                     "kind", item["kind"],
-                    "enabled", item["enabled"]
+                    "enabled", item["enabled"],
+                    "trigger", item.Has("trigger") ? item["trigger"] : ""
                 ))
             }
             result.Push(Map(
@@ -215,6 +263,22 @@ class FeatureRegistry {
     static _SaveGroup(group, on) {
         m := FeatureRegistry._Section("groups")
         m[group] := Map("enabled", on ? 1 : 0)
+        PuntoSettings.Save()
+    }
+
+    ; --- Оверрайды (переназначенные клавиши и триггеры-сокращения). ---
+    ; Хранятся в features.overrides[id] = Map(key?, trigger?). Плоские id-ключи.
+    static _GetOverride(id) {
+        m := FeatureRegistry._Section("overrides")
+        if (m.Has(id) && IsObject(m[id]))
+            return m[id]
+        return Map()
+    }
+    static _SaveOverride(id, field, value) {
+        m := FeatureRegistry._Section("overrides")
+        if !(m.Has(id) && IsObject(m[id]))
+            m[id] := Map()
+        m[id][field] := value
         PuntoSettings.Save()
     }
 }

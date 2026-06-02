@@ -52,7 +52,7 @@ class PuntoSettings {
         d["punto"]      := Map("autoswitch_enabled", false)
         ; Состояние вкл/выкл хоткеев и групп (FeatureRegistry).
         ; Заполняется по мере регистрации; пустые карты — валидный старт.
-        d["features"]   := Map("groups", Map(), "hotkeys", Map())
+        d["features"]   := Map("groups", Map(), "hotkeys", Map(), "overrides", Map())
         return d
     }
 

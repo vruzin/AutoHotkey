@@ -23,15 +23,23 @@ class SettingsWindow {
     static Show() {
         if !SettingsWindow.app {
             a := WebApp("settings", Map(
-                "w", 720, "h", 520,
+                "w", 920, "h", 600,
                 "title", "Launcher",
                 "frameless", true,
                 "hideOnBlur", true
             ))
-            a.On("getData", (p) => SettingsWindow.OnGetData(p))
-            a.On("run",     (p) => SettingsWindow.OnRun(p))
-            a.On("toggle",  (p) => SettingsWindow.OnToggle(p))
-            a.On("hide",    (p) => SettingsWindow.OnHide(p))
+            a.On("getData",    (p) => SettingsWindow.OnGetData(p))
+            a.On("run",        (p) => SettingsWindow.OnRun(p))
+            a.On("toggle",     (p) => SettingsWindow.OnToggle(p))
+            a.On("hide",       (p) => SettingsWindow.OnHide(p))
+            a.On("abbrAdd",    (p) => SettingsWindow.OnAbbrAdd(p))
+            a.On("abbrEdit",   (p) => SettingsWindow.OnAbbrEdit(p))
+            a.On("abbrDelete", (p) => SettingsWindow.OnAbbrDelete(p))
+            a.On("setHotkey",   (p) => SettingsWindow.OnSetHotkey(p))
+            a.On("setTrigger",  (p) => SettingsWindow.OnSetTrigger(p))
+            a.On("addHistory",  (p) => SettingsWindow.OnAddHistory(p))
+            a.On("captureStart",(p) => SettingsWindow.OnCaptureStart(p))
+            a.On("captureEnd",  (p) => SettingsWindow.OnCaptureEnd(p))
             SettingsWindow.app := a
         }
         SettingsWindow.app.Show(SettingsWindow._Data())
@@ -40,6 +48,22 @@ class SettingsWindow {
     static Hide() {
         if SettingsWindow.app
             SettingsWindow.app.Hide()
+    }
+
+    ; ------------------------------------------------------------
+    ; IsActive — окно лаунчера сейчас на переднем плане?
+    ; Используется как контекст HotIf, чтобы аббревиатуры (глобальные
+    ; hotstrings) НЕ срабатывали внутри поля поиска лаунчера. Фокус уходит
+    ; в дочернее окно WebView2, поэтому сверяем корень активного окна.
+    static IsActive() {
+        if (!SettingsWindow.app || !SettingsWindow.app.gui)
+            return false
+        hwnd := SettingsWindow.app.gui.Hwnd
+        fg := DllCall("GetForegroundWindow", "ptr")
+        if (fg = hwnd)
+            return true
+        root := DllCall("GetAncestor", "ptr", fg, "uint", 2, "ptr")  ; GA_ROOT
+        return (root = hwnd)
     }
 
     ; ------------------------------------------------------------
@@ -77,12 +101,72 @@ class SettingsWindow {
         if (id = "punto.autoswitch")
             Punto.SetAutoswitch(on)
         else
-            FeatureRegistry.SetEnabled(id, on)
+            Commands.SetEnabled(id, on)        ; abbr.* → Abbreviations, остальное → FeatureRegistry
         return SettingsWindow._Data()
     }
 
     static OnHide(payload) {
+        Suspend(false)              ; страховка: снять возможный Suspend от захвата
         SettingsWindow.Hide()
+        return ""
+    }
+
+    ; ------------------------------------------------------------
+    ; Аббревиатуры (вкладка «Абревиатуры» в лаунчере).
+    static OnAbbrAdd(payload) {
+        abbr := payload.Has("abbr") ? Trim(payload["abbr"]) : ""
+        text := payload.Has("text") ? payload["text"] : ""
+        if (abbr != "")
+            Commands.AbbrAdd(abbr, text)
+        return SettingsWindow._Data()
+    }
+    static OnAbbrEdit(payload) {
+        abbr := payload.Has("abbr") ? payload["abbr"] : ""
+        text := payload.Has("text") ? payload["text"] : ""
+        if (abbr != "")
+            Commands.AbbrEdit(abbr, text)
+        return SettingsWindow._Data()
+    }
+    static OnAbbrDelete(payload) {
+        abbr := payload.Has("abbr") ? payload["abbr"] : ""
+        if (abbr != "")
+            Commands.AbbrDelete(abbr)
+        return SettingsWindow._Data()
+    }
+
+    ; ------------------------------------------------------------
+    ; Переназначение клавиши (захват комбинации) и триггера-сокращения.
+    ; Возвращает Map(data, result) — UI покажет ошибку при конфликте.
+    static OnSetHotkey(payload) {
+        id    := payload.Has("id") ? payload["id"] : ""
+        combo := payload.Has("combo") ? payload["combo"] : ""
+        res := (id != "") ? Commands.SetHotkey(id, combo) : Map("ok", false, "error", "нет id")
+        return Map("data", SettingsWindow._Data(), "result", res)
+    }
+    static OnSetTrigger(payload) {
+        id  := payload.Has("id") ? payload["id"] : ""
+        trg := payload.Has("trigger") ? payload["trigger"] : ""
+        res := (id != "") ? Commands.SetTrigger(id, trg) : Map("ok", false, "error", "нет id")
+        return Map("data", SettingsWindow._Data(), "result", res)
+    }
+
+    ; История ввода (фаза 5): добавить запрос, вернуть обновлённый список.
+    static OnAddHistory(payload) {
+        q := payload.Has("q") ? payload["q"] : ""
+        return Commands.AddHistory(q)
+    }
+
+    ; ------------------------------------------------------------
+    ; Захват комбинации: на время записи приостанавливаем ВСЕ хоткеи скрипта,
+    ; иначе нажатие уже занятой комбинации выполнит её команду. Ввод в WebView2
+    ; идёт мимо AHK-хоткеев, поэтому Suspend не мешает самому захвату.
+    ; HSuspend исключает hotstrings, но их и так глушит контекст лаунчера.
+    static OnCaptureStart(payload) {
+        Suspend(true)
+        return ""
+    }
+    static OnCaptureEnd(payload) {
+        Suspend(false)
         return ""
     }
 }

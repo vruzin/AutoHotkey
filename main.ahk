@@ -358,6 +358,7 @@ SetDefaultKeyboard(localeId) {
 #Include core\Settings.ahk
 #Include core\FeatureRegistry.ahk
 #Include core\MenuData.ahk
+#Include core\Abbreviations.ahk
 
 ; Фичи поверх ядра (этап 3)
 #Include features\ForceWords.ahk
@@ -450,6 +451,9 @@ RegisterGlobalHotkeys() {
 
 ; Запуск Punto v2 (после загрузки всех модулей)
 Punto.Init()
+
+; Аббревиатуры из data/abbreviations.json (динамические hotstrings).
+Abbreviations.Init()
 
 ; Регистрация управляемых хоткеев (после Punto.Init — он регистрирует свои).
 RegisterGlobalHotkeys()

@@ -6,6 +6,8 @@ tools/data/
 tools/_*
 data/punto_events.log
 data/learned_words.json
+# История ввода лаунчера (личная)
+data/launcher_history.json
 # Профиль/кэш WebView2 (создаётся окном настроек в рантайме)
 data/webview2/
 # Временные файлы валидации

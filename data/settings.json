@@ -5,7 +5,8 @@
   },
   "features":{
     "groups":{},
-    "hotkeys":{"punto.autoswitch":{"enabled":0},"punto.forcewords":{"enabled":0},"text.number":{"enabled":0}}
+    "hotkeys":{"punto.autoswitch":{"enabled":0},"punto.forcewords":{"enabled":0},"text.lower":{"enabled":1},"text.number":{"enabled":1}},
+    "overrides":{"text.lower":{"key":"!Д"}}
   },
   "forcewords":{
     "enabled":1
