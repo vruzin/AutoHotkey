@@ -109,9 +109,8 @@ Hello() {
 
 ; ----------------------------------------------------------
 ; CapsLock+H — мастер добавления новой автозамены
-CapsLock & h:: AddHotstringDialog()
-
-AddHotstringDialog() {
+; (регистрируется в RegisterGlobalHotkeys через FeatureRegistry)
+AddHotstringDialog(*) {
     SetNumLockState("Off")
     SetCapsLockState("Off")
 

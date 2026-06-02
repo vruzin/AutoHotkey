@@ -4,12 +4,16 @@
 ; Проект определяется по пути в заголовке активного окна.
 ; ============================================================
 
-CapsLock & b:: ShowBuildMenu()
+; CapsLock+B — регистрируется в RegisterGlobalHotkeys через FeatureRegistry.
+ShowBuildMenu(*) {
+    MenuData.Build(BuildMenuData()).Show()
+}
 
-ShowBuildMenu() {
-    m := Menu()
-    m.Add("npm run dev", BuildNpm1)
-    m.Show()
+; Данные меню (единый источник для AHK-меню и лаунчера).
+BuildMenuData() {
+    return [
+        Map("label", "npm run dev", "fn", BuildNpm1)
+    ]
 }
 
 BuildNpm1(*) {

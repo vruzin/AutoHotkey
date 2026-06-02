@@ -7,12 +7,16 @@
 A_IconTip := "Light/Dark Mode Switch (AHK)"
 TraySetIcon("shell32.dll", 175)
 
-CapsLock & a:: ShowMainMenu()
+; CapsLock+A — регистрируется в RegisterGlobalHotkeys через FeatureRegistry.
+ShowMainMenu(*) {
+    MenuData.Build(MainMenuData()).Show()
+}
 
-ShowMainMenu() {
-    m := Menu()
-    m.Add("&1. Тема Windows Light/Dark", ToggleWinTheme)
-    m.Show()
+; Данные меню (единый источник для AHK-меню и лаунчера).
+MainMenuData() {
+    return [
+        Map("label", "Тема Windows Light/Dark", "fn", ToggleWinTheme)
+    ]
 }
 
 ToggleWinTheme(*) {

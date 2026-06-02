@@ -4,15 +4,19 @@
 ; Использует общую Send3 (clipboard-paste с меньшей задержкой) из main.ahk.
 ; ============================================================
 
-CapsLock & f:: ShowFlMenu()
-
-ShowFlMenu() {
-    m := Menu()
-    m.Add("&1. Опыт", Fl1)
-    m.Add("&2. Опыт Vue", Fl2)
-    m.Show()
+; CapsLock+F — регистрируется в RegisterGlobalHotkeys через FeatureRegistry.
+ShowFlMenu(*) {
+    MenuData.Build(FlMenuData()).Show()
     SetNumLockState("Off")
     SetCapsLockState("Off")
+}
+
+; Данные меню (единый источник для AHK-меню и лаунчера).
+FlMenuData() {
+    return [
+        Map("label", "Опыт",     "fn", Fl1),
+        Map("label", "Опыт Vue", "fn", Fl2)
+    ]
 }
 
 Fl1(*) {

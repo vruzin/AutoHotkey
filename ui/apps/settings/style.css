@@ -1,0 +1,162 @@
+/* ============================================================
+ * style.css — лаунчер (Alfred-стиль). Тёмная тема, BEM.
+ * ============================================================ */
+:root {
+  --bg:        #1e1e1e;
+  --bg-row:    #2a2a2a;
+  --bg-sel:    #094771;
+  --border:    #3a3a3a;
+  --text:      #e8e8e8;
+  --text-dim:  #9a9a9a;
+  --accent:    #4aa3ff;
+  --off:       #6a6a6a;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  -webkit-user-select: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+::-webkit-scrollbar { width: 9px; }
+::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 5px; }
+
+.launcher {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* --- Поисковая строка --- */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.search__icon { font-size: 18px; opacity: .6; }
+.search__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 500;
+}
+.search__input::placeholder { color: var(--text-dim); }
+
+/* --- Список --- */
+.rows {
+  flex: 1;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.row--sel { background: var(--bg-sel); }
+.row--off .row__label { color: var(--off); }
+
+.row__label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row__group {
+  color: var(--text-dim);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.row__key {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: #1b1b1b;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.row__check {
+  width: 17px; height: 17px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex: none;
+}
+.row__check:disabled { opacity: .35; cursor: not-allowed; }
+
+.rows__empty {
+  list-style: none;
+  padding: 20px;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+/* --- Подвал с шестерёнкой --- */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  background: #232323;
+}
+.footer__hint { flex: 1; color: var(--text-dim); font-size: 12px; }
+
+.footer__call {
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-right: 10px;
+}
+.footer__key {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 12px;
+  color: var(--text);
+  background: #1b1b1b;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.gear {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-size: 16px;
+  width: 32px; height: 28px;
+  cursor: pointer;
+  transition: all .12s ease;
+}
+.gear:hover { background: var(--bg-row); color: var(--text); }
+.gear--on { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.launcher__error {
+  margin: 0;
+  padding: 8px 14px;
+  background: #3a2222;
+  color: #ff9a9a;
+  font-size: 12px;
+}

@@ -4,7 +4,8 @@
 ; Логика: копируем выделенное, вставляем, открываем замену, отправляем Enter.
 ; ============================================================
 
-CapsLock & w:: {
+; CapsLock+W — регистрируется в RegisterGlobalHotkeys через FeatureRegistry.
+DirectFindReplace(*) {
     Send "^c"
     Sleep 300
     Send "^v"

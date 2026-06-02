@@ -32,9 +32,8 @@ CapsLock & r:: {
 
 ; ----------------------------------------------------------
 ; CapsLock+I — показать внешний и локальные IP в ToolTip
-CapsLock & i:: ShowIpAddresses()
-
-ShowIpAddresses() {
+; (регистрируется в RegisterGlobalHotkeys через FeatureRegistry)
+ShowIpAddresses(*) {
     extIP := GetUrl("http://7fw.de/ipraw.php")
     Send2(extIP)
 
@@ -92,12 +91,20 @@ CapsLock & x:: Send "^+x"
 #HotIf
 
 ; ----------------------------------------------------------
+; ВСЕ глобальные хоткеи ниже — именованные функции, принимающие (*),
+; чтобы их можно было включать/выключать через FeatureRegistry.
+; Сама регистрация — в RegisterGlobalHotkeys() (внизу файла, вызывается
+; на старте). Исключение — CapsLock+R (Reload) выше: аварийный, не отключаем.
+
+; ----------------------------------------------------------
 ; Win+Ctrl+Shift+T — переключить «поверх всех окон» для активного
-#^+t:: WinSetAlwaysOnTop(-1, "A")
+AlwaysOnTopToggle(*) {
+    WinSetAlwaysOnTop(-1, "A")
+}
 
 ; ----------------------------------------------------------
 ; CapsLock+Space/[/]/=/\ — вставить кастомные разделители независимо от раскладки
-CapsLock & Space:: {
+SepInsertSelection(*) {
     sel := getSelText()
     if (sel != "")
         Send2("【┋" . sel . "】")
@@ -110,25 +117,25 @@ CapsLock & Space:: {
 ; Scancode-форма работает физически независимо от раскладки и не вызывает
 ; предупреждение «hotkey does not exist in the current keyboard layout».
 ;   SC02B = \   SC01A = [   SC01B = ]   SC00D = =
-CapsLock & SC02B:: {
+SepBar(*) {
     SendText("┋")
     SetNumLockState("Off")
     SetCapsLockState("Off")
 }
 
-CapsLock & SC01A:: {
+SepBracketOpen(*) {
     SendText("【")
     SetNumLockState("Off")
     SetCapsLockState("Off")
 }
 
-CapsLock & SC01B:: {
+SepBracketClose(*) {
     SendText("】")
     SetNumLockState("Off")
     SetCapsLockState("Off")
 }
 
-CapsLock & SC00D:: {
+SepEquals(*) {
     SendText("〓")
     SetNumLockState("Off")
     SetCapsLockState("Off")
@@ -136,20 +143,19 @@ CapsLock & SC00D:: {
 
 ; ----------------------------------------------------------
 ; CapsLock+1..4 — запуск Vivaldi с разными профилями
-CapsLock & 1:: RunVivaldi("Default")        ; VR
-CapsLock & 2:: RunVivaldi("Profile 1")       ; Maryadi
-CapsLock & 3:: RunVivaldi("Profile 2")       ; MVK
-CapsLock & 4:: RunVivaldi("Profile 5")       ; FL
-
 RunVivaldi(profile) {
     Run('M:\Sys\Vivaldi\Application\vivaldi.exe --profile-directory="' . profile . '"')
     SetNumLockState("Off")
     SetCapsLockState("Off")
 }
+VivaldiDefault(*)  => RunVivaldi("Default")     ; VR
+VivaldiProfile1(*) => RunVivaldi("Profile 1")    ; Maryadi
+VivaldiProfile2(*) => RunVivaldi("Profile 2")    ; MVK
+VivaldiProfile5(*) => RunVivaldi("Profile 5")    ; FL
 
 ; ----------------------------------------------------------
 ; Win+C — активировать или запустить GraphCalc
-#c:: {
+GraphCalcToggle(*) {
     if WinExist("GraphCalc") {
         WinActivate
         WinSetAlwaysOnTop(1)
@@ -160,7 +166,7 @@ RunVivaldi(profile) {
 
 ; ----------------------------------------------------------
 ; Win+Insert — активировать или запустить OBS Studio
-#Insert:: {
+ObsToggle(*) {
     if !WinExist("OBS")
         Run("M:\Sys\OBS\bin\64bit\obs64.exe", "M:\Sys\OBS\bin\64bit\")
     else
@@ -169,7 +175,7 @@ RunVivaldi(profile) {
 
 ; ----------------------------------------------------------
 ; Shift+PrintScreen — ABBYY FineReader ScreenshotReader (распознавание области)
-+PrintScreen:: {
+AbbyyScreenshot(*) {
     Run('"C:\Program Files\ABBYY FineReader 16\screenshotreader.exe"')
     Sleep 500
     Send "!{Enter}"
@@ -177,24 +183,35 @@ RunVivaldi(profile) {
 
 ; ----------------------------------------------------------
 ; Ctrl+Shift+Alt+ScrollLock — ZoomIt (приближение с мышкой)
-^+!ScrollLock:: {
+ZoomItMouse(*) {
     if !ProcessExist("ZoomIt.exe")
         Run('"m:\Sys\ZoomIt\ZoomIt.exe"')
     Send "^+!{ScrollLock}"
 }
 
 ; Ctrl+Shift+Alt+Insert — ZoomIt (приближение без мышки)
-^+!Insert:: {
+ZoomItNoMouse(*) {
     if !ProcessExist("ZoomIt.exe")
         Run('"m:\Sys\ZoomIt\ZoomIt.exe"')
     Send "^+!{Insert}"
 }
 
 ; ----------------------------------------------------------
-; Win+Z — меню системных переключателей (Shell, тема Windows)
-#z:: ShowSystemMenu()
+; Ctrl + медиа-клавиша Mute — переключить микрофон (вкл/выкл).
+; Обычный Volume_Mute по-прежнему мьютит колонки — перехватываем только с Ctrl.
+MicToggle(*) {
+    Mic.Toggle()
+}
 
-ShowSystemMenu() {
+; ----------------------------------------------------------
+; CapsLock+Shift — открыть лаунчер (поиск команд).
+OpenLauncher(*) {
+    SettingsWindow.Show()
+}
+
+; ----------------------------------------------------------
+; Win+Z — меню системных переключателей (Shell, тема Windows)
+ShowSystemMenu(*) {
     m := Menu()
     m.Add("Установить Explorer проводником", SetShellExplorer)
     m.Add("Установить Total Commander проводником", SetShellTotalCmd)
@@ -221,9 +238,8 @@ ToggleWindowsTheme(*) {
 
 ; ----------------------------------------------------------
 ; CapsLock+G — генерация пароля длиной 12 символов
-CapsLock & g:: GeneratePassword()
-
-GeneratePassword() {
+; (регистрируется в RegisterGlobalHotkeys через FeatureRegistry)
+GeneratePassword(*) {
     pools := [
         "abcdefghijklmnopqrstuvwxyz",
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -328,6 +344,10 @@ SetDefaultKeyboard(localeId) {
 
 ; Внешние библиотеки
 #Include lib\JSON.ahk
+; WebView2.ahk внутри делает #Include ..\ComVar.ahk и ..\Promise.ahk
+; (относительно своей папки lib\Webview2 → ожидает их в lib\).
+; Поэтому ComVar.ahk и Promise.ahk продублированы в lib\.
+#Include lib\Webview2\WebView2.ahk
 
 ; Ядро Punto v2 (этап 2)
 #Include core\Layout.ahk
@@ -336,6 +356,8 @@ SetDefaultKeyboard(localeId) {
 #Include core\Learning.ahk
 #Include core\History.ahk
 #Include core\Settings.ahk
+#Include core\FeatureRegistry.ahk
+#Include core\MenuData.ahk
 
 ; Фичи поверх ядра (этап 3)
 #Include features\ForceWords.ahk
@@ -343,12 +365,18 @@ SetDefaultKeyboard(localeId) {
 #Include features\Translit.ahk
 #Include features\Number2Text.ahk
 #Include features\PasteRaw.ahk
+#Include features\Mic.ahk
+#Include features\HotkeyHuman.ahk
 
 #Include core\Input.ahk
 #Include core\Autoswitch.ahk
 
 ; UI палитра (этап 4 — пока простая Gui, потом WebView2+Vue)
 #Include ui\Palette.ahk
+
+; Фреймворк Vue-приложений в WebView2 + окно настроек
+#Include ui\WebApp.ahk
+#Include ui\Settings.ahk
 
 #Include core\Punto.ahk
 
@@ -364,5 +392,67 @@ SetDefaultKeyboard(localeId) {
 #Include legacy\Docker.ahk
 #Include legacy\CapsLock_double.ahk
 
+; Единый список команд для лаунчера (после legacy — зависит от *MenuData).
+#Include core\Commands.ahk
+
+; ============================================================
+; РЕГИСТРАЦИЯ УПРАВЛЯЕМЫХ ХОТКЕЕВ
+; ============================================================
+; Все глобальные и legacy-хоткеи регистрируются здесь через FeatureRegistry,
+; чтобы окно настроек могло включать/выключать их галочками в рантайме.
+; Функции-обработчики определены выше (main.ahk) и в legacy/*.ahk —
+; в AHK v2 функции глобальны независимо от порядка #Include.
+;
+; CapsLock (одиночный, смена раскладки), CapsLock+R (Reload) и контекстные
+; #HotIf-хоткеи (CapsLock+X в IDEA, Direct Commander, GraphCalc) НЕ
+; регистрируются — это базовые/контекстные, отключать их нельзя.
+RegisterGlobalHotkeys() {
+    R := FeatureRegistry
+
+    ; --- group: global (глобальные хоткеи поверх всех окон) ---
+    R.Register("global.ip",          "global", "Показать внешний и локальные IP",        "CapsLock & i",   ShowIpAddresses)
+    R.Register("global.alwaysontop", "global", "Поверх всех окон (toggle)",              "#^+t",           AlwaysOnTopToggle)
+    R.Register("global.sep_sel",     "global", "Разделитель 【┋…】 вокруг выделения",     "CapsLock & Space", SepInsertSelection)
+    R.Register("global.sep_bar",     "global", "Вставить ┋",                             "CapsLock & SC02B", SepBar)
+    R.Register("global.sep_open",    "global", "Вставить 【",                             "CapsLock & SC01A", SepBracketOpen)
+    R.Register("global.sep_close",   "global", "Вставить 】",                             "CapsLock & SC01B", SepBracketClose)
+    R.Register("global.sep_eq",      "global", "Вставить 〓",                             "CapsLock & SC00D", SepEquals)
+    R.Register("global.vivaldi1",    "global", "Vivaldi: профиль VR",                    "CapsLock & 1",   VivaldiDefault)
+    R.Register("global.vivaldi2",    "global", "Vivaldi: профиль Maryadi",               "CapsLock & 2",   VivaldiProfile1)
+    R.Register("global.vivaldi3",    "global", "Vivaldi: профиль MVK",                   "CapsLock & 3",   VivaldiProfile2)
+    R.Register("global.vivaldi4",    "global", "Vivaldi: профиль FL",                    "CapsLock & 4",   VivaldiProfile5)
+    R.Register("global.graphcalc",   "global", "GraphCalc (Win+C)",                      "#c",             GraphCalcToggle)
+    R.Register("global.obs",         "global", "OBS Studio (Win+Insert)",                "#Insert",        ObsToggle)
+    R.Register("global.abbyy",       "global", "ABBYY ScreenshotReader (Shift+PrtSc)",   "+PrintScreen",   AbbyyScreenshot)
+    R.Register("global.zoomit",      "global", "ZoomIt с мышкой",                        "^+!ScrollLock",  ZoomItMouse)
+    R.Register("global.zoomit_nm",   "global", "ZoomIt без мышки",                       "^+!Insert",      ZoomItNoMouse)
+    R.Register("global.sysmenu",     "global", "Системное меню (Win+Z)",                 "#z",             ShowSystemMenu)
+    R.Register("global.password",    "global", "Сгенерировать пароль",                   "CapsLock & g",   GeneratePassword)
+
+    ; --- group: global — лаунчер ---
+    R.Register("global.launcher",    "global", "Открыть лаунчер",                        "CapsLock & LShift", OpenLauncher)
+
+    ; --- group: mic (микрофон) ---
+    R.Register("mic.toggle",         "mic",    "Переключить микрофон (Ctrl+Mute)",       "^Volume_Mute",   MicToggle)
+
+    ; --- group: legacy (меню по CapsLock+буква) ---
+    R.Register("legacy.mainmenu",    "legacy", "Меню: тема Windows (CapsLock+A)",        "CapsLock & a",   ShowMainMenu)
+    R.Register("legacy.ssh",         "legacy", "Меню: sysadmin/SSH (CapsLock+S)",        "CapsLock & s",   ShowSshMenu)
+    R.Register("legacy.docker",      "legacy", "Меню: Docker (CapsLock+D)",              "CapsLock & d",   ShowDockerMenu)
+    R.Register("legacy.kitty",       "legacy", "Запуск KiTTY (CapsLock+K)",              "CapsLock & k",   KittyLaunch)
+    R.Register("legacy.build",       "legacy", "Меню: build/dev (CapsLock+B)",           "CapsLock & b",   ShowBuildMenu)
+    R.Register("legacy.fl",          "legacy", "Меню: шаблоны FL.ru (CapsLock+F)",       "CapsLock & f",   ShowFlMenu)
+    R.Register("legacy.direct",      "legacy", "Yandex Direct Find&Replace (CapsLock+W)","CapsLock & w",   DirectFindReplace)
+    R.Register("legacy.gtranslate",  "legacy", "Google Translate (CapsLock+T)",          "CapsLock & t",   GoogleTranslateHotkey)
+    R.Register("legacy.hotstring",   "legacy", "Добавить автозамену (CapsLock+H)",       "CapsLock & h",   AddHotstringDialog)
+    R.Register("legacy.dopmenu",     "legacy", "Меню: сниппеты (CapsLock+Z)",            "CapsLock & z",   ShowDopMenu)
+}
+
 ; Запуск Punto v2 (после загрузки всех модулей)
 Punto.Init()
+
+; Регистрация управляемых хоткеев (после Punto.Init — он регистрирует свои).
+RegisterGlobalHotkeys()
+
+; Трей: одинарный клик → окно настроек, пункт меню «Настройки…».
+SettingsTray_Init()

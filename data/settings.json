@@ -3,6 +3,10 @@
     "toggle_delay_ms":60,
     "triggers":" .,;:!?)]}>\"'"
   },
+  "features":{
+    "groups":{},
+    "hotkeys":{"punto.autoswitch":{"enabled":0},"punto.forcewords":{"enabled":0},"text.number":{"enabled":0}}
+  },
   "forcewords":{
     "enabled":1
   },
@@ -14,6 +18,9 @@
   },
   "palette":{
     "hotkey":"^Pause"
+  },
+  "punto":{
+    "autoswitch_enabled":0
   },
   "translit":{
     "system":"gost"

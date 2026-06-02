@@ -50,9 +50,10 @@ class PuntoAutoswitch {
         PuntoInput.Log("OnWordEnd: word=[" . word . "] sep=[" . separator . "] type=" . cls["type"] . " inputLang=" . inputLang)
 
         ; ForceWords проходят независимо от Punto.enabled/no_autoswitch.
-        ; Только при mode="off" не трогаем (игры, fullscreen).
+        ; Только при mode="off" не трогаем (игры, fullscreen), и если фича
+        ; не выключена в окне настроек (FeatureRegistry).
         forceMode := PuntoAppContext.ModeFor()
-        if (forceMode != "off") {
+        if (forceMode != "off" && FeatureRegistry.IsActive("punto.forcewords")) {
             canonical := PuntoForceWords.Find(word)
             if (canonical != "" && canonical != word
                     && InStr(PuntoAutoswitch.TRIGGER_SEPS, separator, true)) {

@@ -15,7 +15,9 @@
 ; Оригинальный v1-код сохранён в legacy/v1_backup/GoogleTranslate.v1.ahk.
 ; ============================================================
 
-CapsLock & t:: {
+; CapsLock+T — обёртка для FeatureRegistry (направление зависит от Shift).
+; Регистрируется в RegisterGlobalHotkeys.
+GoogleTranslateHotkey(*) {
     if GetKeyState("Shift")
         OpenGoogleTranslate("ru", "en")
     else

@@ -3,47 +3,44 @@
 ; CapsLock+D — иерархическое меню docker / docker-compose / swarm-команд.
 ; ============================================================
 
-CapsLock & d:: ShowDockerMenu()
-
-ShowDockerMenu() {
-    ; --- docker ps ---
-    psMenu := Menu()
-    psMenu.Add("&1. docker ps`tСписок контейнеров", (*) => SendCmdLine("docker ps"))
-    psMenu.Add("&2. docker ps | grep ...`tФильтр списка", (*) => SendText("docker ps | grep "))
-    psMenu.Add("&3. docker ps | grep nginx`tФильтр с nginx", (*) => SendCmdLine("docker ps | grep nginx"))
-    psMenu.Add("&4. docker ps | grep sftpgo`tФильтр с sftpgo", (*) => SendCmdLine("docker ps | grep sftpgo"))
-    psMenu.Add()
-
-    ; --- docker-compose ---
-    composeMenu := Menu()
-    composeMenu.Add("&1. docker-compose up -d --no-deps --build nginx`tПересборка контейнера", DockerComposeUp)
-    composeMenu.Add("&2. docker-compose run --rm certbot certonly --webroot ... -d subdomen.example.ru`tLet's Encrypt сертификат",
-        (*) => SendText("docker-compose run --rm  certbot certonly --webroot --webroot-path /var/www/certbot/ -d subdomen.example.ru"))
-    composeMenu.Add("&3. docker-compose run --rm certbot renew`tОбновить сертификаты",
-        (*) => SendText("docker-compose run --rm certbot renew"))
-    composeMenu.Add()
-
-    ; --- swarm node ---
-    nodeMenu := Menu()
-    nodeMenu.Add("&1. Шаг1: Открыть порты`tmanager node", DockerNode1)
-    nodeMenu.Add("&2. Шаг1: Открыть порты`tworker node",  DockerNode2)
-    nodeMenu.Add("&3. Шаг2: docker swarm init`tОтвет — на все worker node", DockerNode3)
-    nodeMenu.Add("&4. docker node ls`tСписок кластеров", (*) => (SendText("docker node ls"), Send("{Enter}")))
-    nodeMenu.Add()
-    nodeMenu.Add("&5. Убить кластер: docker swarm leave`tВыполнить на кластере",
-        (*) => (SendText("docker swarm leave"), Send("{Enter}")))
-
-    ; --- корневое меню ---
-    root := Menu()
-    root.Add("&0. Исходники`thttps://habr.com/ru/post/659813/",
-        (*) => (SendText("https://habr.com/ru/post/659813/"), Send("{Enter}")))
-    root.Add("&1. docker ps`tСписок контейнеров", psMenu)
-    root.Add("&2. docker-compose ...`tКонсоль", composeMenu)
-    root.Add("&3. Создание кластера`tdocker swarm", nodeMenu)
-    root.Show()
-
+; CapsLock+D — регистрируется в RegisterGlobalHotkeys через FeatureRegistry.
+ShowDockerMenu(*) {
+    MenuData.Build(DockerMenuData()).Show()
     SetNumLockState("Off")
     SetCapsLockState("Off")
+}
+
+; Данные меню (единый источник для AHK-меню и лаунчера).
+DockerMenuData() {
+    psSub := [
+        Map("label", "docker ps", "hint", "Список контейнеров", "fn", (*) => SendCmdLine("docker ps")),
+        Map("label", "docker ps | grep ...", "hint", "Фильтр списка", "fn", (*) => SendText("docker ps | grep ")),
+        Map("label", "docker ps | grep nginx", "hint", "Фильтр с nginx", "fn", (*) => SendCmdLine("docker ps | grep nginx")),
+        Map("label", "docker ps | grep sftpgo", "hint", "Фильтр с sftpgo", "fn", (*) => SendCmdLine("docker ps | grep sftpgo"))
+    ]
+    composeSub := [
+        Map("label", "docker-compose up -d --no-deps --build nginx", "hint", "Пересборка контейнера", "fn", DockerComposeUp),
+        Map("label", "docker-compose run --rm certbot certonly ... -d subdomen.example.ru", "hint", "Let's Encrypt сертификат",
+            "fn", (*) => SendText("docker-compose run --rm  certbot certonly --webroot --webroot-path /var/www/certbot/ -d subdomen.example.ru")),
+        Map("label", "docker-compose run --rm certbot renew", "hint", "Обновить сертификаты",
+            "fn", (*) => SendText("docker-compose run --rm certbot renew"))
+    ]
+    nodeSub := [
+        Map("label", "Шаг1: Открыть порты (manager node)", "fn", DockerNode1),
+        Map("label", "Шаг1: Открыть порты (worker node)",  "fn", DockerNode2),
+        Map("label", "Шаг2: docker swarm init", "hint", "Ответ — на все worker node", "fn", DockerNode3),
+        Map("label", "docker node ls", "hint", "Список кластеров", "fn", (*) => (SendText("docker node ls"), Send("{Enter}"))),
+        Map("sep", true),
+        Map("label", "Убить кластер: docker swarm leave", "hint", "Выполнить на кластере",
+            "fn", (*) => (SendText("docker swarm leave"), Send("{Enter}")))
+    ]
+    return [
+        Map("label", "Исходники", "hint", "https://habr.com/ru/post/659813/",
+            "fn", (*) => (SendText("https://habr.com/ru/post/659813/"), Send("{Enter}"))),
+        Map("label", "docker ps", "hint", "Список контейнеров", "sub", psSub),
+        Map("label", "docker-compose ...", "hint", "Консоль", "sub", composeSub),
+        Map("label", "Создание кластера", "hint", "docker swarm", "sub", nodeSub)
+    ]
 }
 
 ; ----------------------------------------------------------

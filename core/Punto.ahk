@@ -25,7 +25,9 @@ class Punto {
         PuntoSettings.Apply()              ; перетирает дефолты пользовательскими
         PuntoInput.Start()
 
-        ; Хоткеи. Стандартная клавиша PuntoSwitcher — Pause (она же Break без Ctrl).
+        ; --- Базовые Pause-хоткеи Punto (сердце автопереключателя). ---
+        ; Не выносим в FeatureRegistry: это управление самим Punto, оно есть
+        ; в группе "punto" через флаг автозамены (Alt+Pause / окно настроек).
         Hotkey("Pause",   (*) => Punto.HandleBreak())
         Hotkey("+Pause",  (*) => Punto.ConvertSelection())
         Hotkey("!Pause",  (*) => Punto.Toggle())
@@ -33,17 +35,27 @@ class Punto {
         Hotkey("^!d",     (*) => Punto.ShowDiagnostics())
         Hotkey("^!l",     (*) => Punto.ToggleDebug())
 
-        ; Этап 3 — текстовые операции (Ctrl+Shift+Alt+letter, чтобы не
-        ; конфликтовать с системными и приложениями).
-        Hotkey("^+!u",    (*) => PuntoCase.Upper())
-        Hotkey("^+!l",    (*) => PuntoCase.Lower())
-        Hotkey("^+!s",    (*) => PuntoCase.Sentence())
-        Hotkey("^+!t",    (*) => PuntoCase.Title())
-        Hotkey("^+!y",    (*) => PuntoCase.Toggle())
-        Hotkey("^+!j",    (*) => PuntoTranslit.TranslitSelected())
-        Hotkey("^+!n",    (*) => PuntoNumber.SelectionToText())
-        Hotkey("^+!v",    (*) => PuntoPasteRaw.Paste())
-        Hotkey("^+!r",    (*) => Punto.ResetLearning())
+        ; --- Управляемые хоткеи через FeatureRegistry (можно вкл/выкл в окне). ---
+        R := FeatureRegistry
+
+        ; group: punto — фичи автопереключения, проверяются в Autoswitch через
+        ; FeatureRegistry.IsActive(...). Это флаги без своей клавиши.
+        R.RegisterFeature("punto.autoswitch", "punto", "Автопереключение раскладки (Punto)")
+        R.RegisterFeature("punto.forcewords", "punto", "ForceWords (HTML/Vue/Golang в нужном регистре)")
+        ; Мастер-состояние автозамены — Punto.enabled (из punto.autoswitch_enabled).
+        ; Зеркалим его в флаг фичи, чтобы окно настроек показывало верное значение.
+        R.SetEnabled("punto.autoswitch", Punto.enabled)
+
+        ; group: text — текстовые операции (Ctrl+Shift+Alt+letter).
+        R.Register("text.upper",    "text", "UPPER выделенное",                 "^+!u", (*) => PuntoCase.Upper())
+        R.Register("text.lower",    "text", "lower выделенное",                 "^+!l", (*) => PuntoCase.Lower())
+        R.Register("text.sentence", "text", "Первое предложение с заглавной",   "^+!s", (*) => PuntoCase.Sentence())
+        R.Register("text.title",    "text", "Каждое Слово С Заглавной",         "^+!t", (*) => PuntoCase.Title())
+        R.Register("text.toggle",   "text", "Флип регистра",                    "^+!y", (*) => PuntoCase.Toggle())
+        R.Register("text.translit", "text", "Транслит ru↔lat (авто)",           "^+!j", (*) => PuntoTranslit.TranslitSelected())
+        R.Register("text.number",   "text", "Число прописью",                   "^+!n", (*) => PuntoNumber.SelectionToText())
+        R.Register("text.pasteraw", "text", "Вставить без форматирования",      "^+!v", (*) => PuntoPasteRaw.Paste())
+        R.Register("text.reset",    "text", "Сбросить самообучаемый словарь",   "^+!r", (*) => Punto.ResetLearning())
 
         Punto.UpdateTray()
         Punto.initialized := true
@@ -183,14 +195,22 @@ class Punto {
     ; ------------------------------------------------------------
     ; Toggle — Alt+Pause: включить/выключить автопереключатель.
     static Toggle() {
-        Punto.enabled := !Punto.enabled
-        if Punto.enabled {
+        Punto.SetAutoswitch(!Punto.enabled)
+        Punto.Flash("Punto: " . (Punto.enabled ? "ON" : "OFF"))
+    }
+
+    ; ------------------------------------------------------------
+    ; SetAutoswitch — явно задать состояние автозамены (из окна настроек
+    ; или Alt+Pause). Синхронизирует Punto.enabled, InputHook, settings.json
+    ; (мастер-ключ punto.autoswitch_enabled) и флаг фичи в FeatureRegistry.
+    static SetAutoswitch(on) {
+        Punto.enabled := !!on
+        if Punto.enabled
             PuntoInput.Enable()
-            Punto.Flash("Punto: ON")
-        } else {
+        else
             PuntoInput.Disable()
-            Punto.Flash("Punto: OFF")
-        }
+        PuntoSettings.Set("punto.autoswitch_enabled", on ? 1 : 0)
+        try FeatureRegistry.SetEnabled("punto.autoswitch", on)
         Punto.UpdateTray()
     }
 

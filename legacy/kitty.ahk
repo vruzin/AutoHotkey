@@ -12,7 +12,8 @@
 
 ; ----------------------------------------------------------
 ; CapsLock+K — запуск KiTTY и навигация: TABx5, Downx5 (выбор сохранённой сессии)
-CapsLock & k:: {
+; (регистрируется в RegisterGlobalHotkeys через FeatureRegistry)
+KittyLaunch(*) {
     Run('m:\Sys\Kitty\kitty_portable.exe')
     WinWait("KiTTY Configuration")
     Sleep 300
@@ -21,96 +22,86 @@ CapsLock & k:: {
 
 ; ----------------------------------------------------------
 ; CapsLock+S — большое sysadmin-меню
-CapsLock & s:: ShowSshMenu()
-
-ShowSshMenu() {
-    ; --- nginx ---
-    nginxMenu := Menu()
-    nginxMenu.Add("&1. nginx -t", (*) => SendCmd("nginx -t"))
-    nginxMenu.Add("&2. nginx -s reload", (*) => SendCmd("nginx -s reload"))
-    nginxMenu.Add("&3. nginx -v", (*) => SendCmd("nginx -v"))
-
-    ; --- chmod / chown ---
-    chmodMenu := Menu()
-    chmodMenu.Add("&1. chown -R bitrix:bitrix /home/bitrix/ext_www/mvk-spb.ru/vruzin/`t(Владелец рекурсивно)",
-        (*) => SendText("chown -R bitrix:bitrix /home/bitrix/ext_www/mvk-spb.ru/vruzin/"))
-    chmodMenu.Add("&2. chmod -R 755 .`t(Права 755 рекурсивно)",
-        (*) => (SendText("chmod -R 755 ."), Send("{Enter}")))
-
-    ; --- systemctl (динамически) ---
-    systemctlMenu := BuildSystemctlMenu()
-
-    ; --- git ---
-    gitMenu := Menu()
-    gitMenu.Add("&1. git submodule update --init --merge --remote --recursive`t(Субмодули)",
-        (*) => SendCmd("git submodule update --init --merge --remote --recursive"))
-    gitMenu.Add("&2. git config --global user.name`t(Git Авторизация)", DoGitConfig)
-    gitMenu.Add("&3. git config --list --show-origin`t(настройки и где заданы. Q-выход)",
-        (*) => SendCmd("git config --list --show-origin"))
-    gitMenu.Add("&4. git branch --sort=-committerdate`t(сортировка веток по дате)",
-        (*) => SendCmd("git branch --sort=-committerdate"))
-
-    ; --- powershell ---
-    powershellMenu := Menu()
-    powershellMenu.Add('&1. (dir */*.go | select-string "github.com" | Get-Unique)`t(подключаемые github-модули)',
-        (*) => Send('(dir */*.go | select-string "github.com" | Get-Unique){Enter}'))
-
-    ; --- MVK ---
-    mvkMenu := Menu()
-    mvkMenu.Add("&1. rm -rf`t(Удалить весь кеш)",
-        (*) => Send("rm -rf /home/bitrix/ext_www/mvk-spb.ru/bitrix/managed_cache/MYSQL/* /home/bitrix/ext_www/mvk-spb.ru/bitrix/cache/*{Enter}"))
-
-    ; --- ssh ---
-    sshMenu := Menu()
-    sshMenu.Add("&T. ТУННЕЛЬ`t(запустить в powershell)", Ssh0)
-    sshMenu.Add("&1. ssh =>`t(копировать ключ на удалённый сервер)", Ssh4)
-    sshMenu.Add("&2. ssh =>`t(копировать ключ в .ssh/authorized_keys)", Ssh7)
-    sshMenu.Add("&3. ssh туннель =>`t(тунель через удалённый порт)", Ssh5)
-    sshMenu.Add("&4. ssh скрипт =>`t(локальный скрипт на удалённом сервере)", Ssh6)
-    sshMenu.Add("&5. ls -l`t(Список директории подробно)", (*) => (SendText("ls -l"), Send("{Enter}")))
-    sshMenu.Add("&6. ls -al`t(Список директории подробно)", (*) => (SendText("ls -al"), Send("{Enter}")))
-    sshMenu.Add("&7. ssh user@ip`t(Подключение ssh)", (*) => (SendText("ssh user@ip"), Send("{Enter}")))
-
-    ; --- curl ---
-    curlMenu := Menu()
-    curlMenu.Add("&1. curl --resolve 'domain.ru:80:127.0.0.1' http://domain.ru/link`t(запрос по IP)",
-        (*) => SendText("curl --resolve 'domain.ru:80:127.0.0.1' http://domain.ru/link"))
-
-    ; --- backup ---
-    backupMenu := Menu()
-    backupMenu.Add("&1. mysqldump -u root -p dbname > db-YYYY-MM-DD.sql`t(Бэкап MySQL)", DoBackupSql)
-    backupMenu.Add("&2. tar -cvf public_YYYY-MM-DD.tar.gz /var/www/vruzin/domen.ru`t(Архивация папки)", DoBackupTar)
-
-    ; --- ISPmanager ---
-    ispMenu := Menu()
-    ispMenu.Add("&1. /usr/local/mgr5/sbin/mgrctl -m ispmgr exit`t(перегрузить ISP)",
-        (*) => SendText("/usr/local/mgr5/sbin/mgrctl -m ispmgr exit"))
-
-    ; --- сборка корневого меню ---
-    root := Menu()
-    root.Add("&1. nginx", nginxMenu)
-    root.Add("&2. chown/chmod`t(Права и Владельцы)", chmodMenu)
-    root.Add("&3. systemctl", systemctlMenu)
-    root.Add("&4. git", gitMenu)
-    root.Add("&5. PowerShell", powershellMenu)
-    root.Add("&6. MVK", mvkMenu)
-    root.Add("&7. ssh", sshMenu)
-    root.Add("&8. curl", curlMenu)
-    root.Add("&9. Бекап", backupMenu)
-    root.Add("&a. ISPmanager 6", ispMenu)
-    root.Add()  ; разделитель
-    root.Add("&cd /var/www/www-root/data/", (*) => Send("cd /var/www/www-root/data/{Enter}ls -la{Enter}"))
-    root.Add("&df`t(Сколько места занято)", (*) => Send("df{Enter}"))
-    root.Add("c&at /proc/version`t(Версия системы)", (*) => Send("cat /proc/version{Enter}"))
-    root.Add("ca&t /etc/*-release`t(Всё о системе)", (*) => Send("cat /etc/*-release{Enter}"))
-    root.Add('n&ginx -T | grep "server_name "`t(Список доменов)',
-        (*) => Send('nginx -T | grep "server_name "{Enter}'))
-    root.Add("n&etstat -ano | findstr :9303`t(порт 9303)",
-        (*) => Send("netstat -ano | findstr :9303{Enter}"))
-
-    root.Show()
+; (регистрируется в RegisterGlobalHotkeys через FeatureRegistry)
+ShowSshMenu(*) {
+    MenuData.Build(SshMenuData()).Show()
     SetNumLockState("Off")
     SetCapsLockState("Off")
+}
+
+; Данные sysadmin-меню (единый источник для AHK-меню и лаунчера).
+; systemctl остаётся динамическим подменю (BuildSystemctlMenu возвращает Menu) —
+; MenuData.Build вставит его как готовый объект; в лаунчер он не разворачивается.
+SshMenuData() {
+    nginxSub := [
+        Map("label", "nginx -t",        "fn", (*) => SendCmd("nginx -t")),
+        Map("label", "nginx -s reload", "fn", (*) => SendCmd("nginx -s reload")),
+        Map("label", "nginx -v",        "fn", (*) => SendCmd("nginx -v"))
+    ]
+    chmodSub := [
+        Map("label", "chown -R bitrix:bitrix .../vruzin/", "hint", "Владелец рекурсивно",
+            "fn", (*) => SendText("chown -R bitrix:bitrix /home/bitrix/ext_www/mvk-spb.ru/vruzin/")),
+        Map("label", "chmod -R 755 .", "hint", "Права 755 рекурсивно",
+            "fn", (*) => (SendText("chmod -R 755 ."), Send("{Enter}")))
+    ]
+    gitSub := [
+        Map("label", "git submodule update --init --merge --remote --recursive", "hint", "Субмодули",
+            "fn", (*) => SendCmd("git submodule update --init --merge --remote --recursive")),
+        Map("label", "git config --global user.name", "hint", "Git Авторизация", "fn", DoGitConfig),
+        Map("label", "git config --list --show-origin", "hint", "настройки и где заданы. Q-выход",
+            "fn", (*) => SendCmd("git config --list --show-origin")),
+        Map("label", "git branch --sort=-committerdate", "hint", "сортировка веток по дате",
+            "fn", (*) => SendCmd("git branch --sort=-committerdate"))
+    ]
+    powershellSub := [
+        Map("label", '(dir */*.go | select-string "github.com" | Get-Unique)', "hint", "подключаемые github-модули",
+            "fn", (*) => Send('(dir */*.go | select-string "github.com" | Get-Unique){Enter}'))
+    ]
+    mvkSub := [
+        Map("label", "rm -rf (весь кеш Bitrix)", "hint", "Удалить весь кеш",
+            "fn", (*) => Send("rm -rf /home/bitrix/ext_www/mvk-spb.ru/bitrix/managed_cache/MYSQL/* /home/bitrix/ext_www/mvk-spb.ru/bitrix/cache/*{Enter}"))
+    ]
+    sshSub := [
+        Map("label", "ТУННЕЛЬ", "hint", "запустить в powershell", "fn", Ssh0),
+        Map("label", "ssh => копировать ключ на удалённый сервер", "fn", Ssh4),
+        Map("label", "ssh => копировать ключ в .ssh/authorized_keys", "fn", Ssh7),
+        Map("label", "ssh туннель => через удалённый порт", "fn", Ssh5),
+        Map("label", "ssh скрипт => локальный скрипт на сервере", "fn", Ssh6),
+        Map("label", "ls -l",  "hint", "Список директории подробно", "fn", (*) => (SendText("ls -l"), Send("{Enter}"))),
+        Map("label", "ls -al", "hint", "Список директории подробно", "fn", (*) => (SendText("ls -al"), Send("{Enter}"))),
+        Map("label", "ssh user@ip", "hint", "Подключение ssh", "fn", (*) => (SendText("ssh user@ip"), Send("{Enter}")))
+    ]
+    curlSub := [
+        Map("label", "curl --resolve 'domain.ru:80:127.0.0.1' http://domain.ru/link", "hint", "запрос по IP",
+            "fn", (*) => SendText("curl --resolve 'domain.ru:80:127.0.0.1' http://domain.ru/link"))
+    ]
+    backupSub := [
+        Map("label", "mysqldump -u root -p dbname > db-YYYY-MM-DD.sql", "hint", "Бэкап MySQL", "fn", DoBackupSql),
+        Map("label", "tar -cvf public_YYYY-MM-DD.tar.gz /var/www/vruzin/domen.ru", "hint", "Архивация папки", "fn", DoBackupTar)
+    ]
+    ispSub := [
+        Map("label", "/usr/local/mgr5/sbin/mgrctl -m ispmgr exit", "hint", "перегрузить ISP",
+            "fn", (*) => SendText("/usr/local/mgr5/sbin/mgrctl -m ispmgr exit"))
+    ]
+    return [
+        Map("label", "nginx", "sub", nginxSub),
+        Map("label", "chown/chmod", "hint", "Права и Владельцы", "sub", chmodSub),
+        Map("label", "systemctl", "sub", BuildSystemctlMenu()),   ; динамическое подменю (Menu)
+        Map("label", "git", "sub", gitSub),
+        Map("label", "PowerShell", "sub", powershellSub),
+        Map("label", "MVK", "sub", mvkSub),
+        Map("label", "ssh", "sub", sshSub),
+        Map("label", "curl", "sub", curlSub),
+        Map("label", "Бекап", "sub", backupSub),
+        Map("label", "ISPmanager 6", "sub", ispSub),
+        Map("sep", true),
+        Map("label", "cd /var/www/www-root/data/ + ls -la", "fn", (*) => Send("cd /var/www/www-root/data/{Enter}ls -la{Enter}")),
+        Map("label", "df", "hint", "Сколько места занято", "fn", (*) => Send("df{Enter}")),
+        Map("label", "cat /proc/version", "hint", "Версия системы", "fn", (*) => Send("cat /proc/version{Enter}")),
+        Map("label", "cat /etc/*-release", "hint", "Всё о системе", "fn", (*) => Send("cat /etc/*-release{Enter}")),
+        Map("label", 'nginx -T | grep "server_name "', "hint", "Список доменов", "fn", (*) => Send('nginx -T | grep "server_name "{Enter}')),
+        Map("label", "netstat -ano | findstr :9303", "hint", "порт 9303", "fn", (*) => Send("netstat -ano | findstr :9303{Enter}"))
+    ]
 }
 
 ; ----------------------------------------------------------

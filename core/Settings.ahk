@@ -46,6 +46,13 @@ class PuntoSettings {
         d["input"]      := Map("debug_on_start", false)
         d["palette"]    := Map("hotkey", "^Pause")
         d["forcewords"] := Map("enabled", true)
+        ; Punto-подобное автопереключение раскладки. Выключено по умолчанию —
+        ; включается через Alt+Pause или в этом конфиге. ForceWords/Case/Translit
+        ; и прочие модули работают независимо от этого флага.
+        d["punto"]      := Map("autoswitch_enabled", false)
+        ; Состояние вкл/выкл хоткеев и групп (FeatureRegistry).
+        ; Заполняется по мере регистрации; пустые карты — валидный старт.
+        d["features"]   := Map("groups", Map(), "hotkeys", Map())
         return d
     }
 
@@ -88,6 +95,17 @@ class PuntoSettings {
         if d.Has("input") && d["input"].Has("debug_on_start")
                 && d["input"]["debug_on_start"]
             PuntoInput.EnableDebug()
+
+        ; Применить punto.autoswitch_enabled. Если ключа нет — считаем выключенным
+        ; (текущий пользовательский режим: автопереключение пока отключено).
+        autoswitchEnabled := (d.Has("punto") && d["punto"].Has("autoswitch_enabled"))
+            ? !!d["punto"]["autoswitch_enabled"]
+            : false
+        Punto.enabled := autoswitchEnabled
+        if autoswitchEnabled
+            PuntoInput.Enable()
+        else
+            PuntoInput.Disable()
     }
 
     ; ------------------------------------------------------------

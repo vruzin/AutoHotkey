@@ -3,15 +3,19 @@
 ; CapsLock+Z: служебные сниппеты (пути, git config).
 ; ============================================================
 
-CapsLock & z:: ShowDopMenu()
+; CapsLock+Z — регистрируется в RegisterGlobalHotkeys через FeatureRegistry.
+ShowDopMenu(*) {
+    MenuData.Build(DopMenuData()).Show()
+}
 
-ShowDopMenu() {
-    m := Menu()
-    m.Add(".prg / inqoob", DopIq1)
-    m.Add("&Git / global vruzin", DopIq2)
-    m.Add()  ; разделитель
-    m.Add("Надо сделать: {|Купить|Подобрать|Подбор|Цена|Рассчитать|Расчет|Прайс|Прайслист|Недорого}", DopEmpty)
-    m.Show()
+; Данные меню (единый источник для AHK-меню и лаунчера).
+DopMenuData() {
+    return [
+        Map("label", ".prg / inqoob",        "fn", DopIq1),
+        Map("label", "Git / global vruzin",  "fn", DopIq2),
+        Map("sep", true),
+        Map("label", "Надо сделать: {|Купить|Подобрать|Подбор|Цена|Рассчитать|Расчет|Прайс|Прайслист|Недорого}", "fn", DopEmpty)
+    ]
 }
 
 DopIq1(*) {
